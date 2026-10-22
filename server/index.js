@@ -56,6 +56,49 @@ app.get("/api/health", (_req, res) =>
   res.json({ status: "ok", database: "sqlite" }),
 );
 app.get("/api/catalog", (_req, res) => res.json({ waters, fish }));
+app.get("/api/maps", (_req, res) =>
+  res.json(JSON.parse(store.getSetting("waterMaps") || "{}")),
+);
+const mapSchema = z
+  .object({
+    url: z
+      .string()
+      .max(2000)
+      .refine((value) => {
+        if (/^\/maps\/[a-zA-Z0-9_./-]+$/.test(value) && !value.includes(".."))
+          return true;
+        try {
+          const url = new URL(value);
+          return url.protocol === "https:" && !url.username && !url.password;
+        } catch {
+          return false;
+        }
+      }),
+    minX: z.number().finite(),
+    maxX: z.number().finite(),
+    minY: z.number().finite(),
+    maxY: z.number().finite(),
+    flipY: z.boolean(),
+  })
+  .refine(
+    (v) => v.maxX > v.minX && v.maxY > v.minY,
+    "Максимальные координаты должны быть больше минимальных",
+  );
+app.put("/api/maps/:waterId", (req, res) => {
+  if (!waters.some((w) => w.id === req.params.waterId))
+    return res.status(404).json({ error: "Водоём не найден" });
+  const config = mapSchema.parse(req.body);
+  const maps = JSON.parse(store.getSetting("waterMaps") || "{}");
+  maps[req.params.waterId] = config;
+  store.setSetting("waterMaps", JSON.stringify(maps));
+  res.json(config);
+});
+app.delete("/api/maps/:waterId", (req, res) => {
+  const maps = JSON.parse(store.getSetting("waterMaps") || "{}");
+  delete maps[req.params.waterId];
+  store.setSetting("waterMaps", JSON.stringify(maps));
+  res.json({ ok: true });
+});
 app.get("/api/reports", (req, res) =>
   res.json(req.query.demo === "true" ? demoReports() : store.reports()),
 );
@@ -129,12 +172,10 @@ app.post("/api/sources/:id/sync", async (req, res) => {
   const source = store.sources().find((s) => s.id === req.params.id);
   if (!source) return res.status(404).json({ error: "Источник не найден" });
   if (source.type === "website")
-    return res
-      .status(422)
-      .json({
-        error:
-          "Для этого сайта пока нет адаптера. Можно добавить отчёт со ссылкой на публикацию или подключить RSS/JSON-ленту.",
-      });
+    return res.status(422).json({
+      error:
+        "Для этого сайта пока нет адаптера. Можно добавить отчёт со ссылкой на публикацию или подключить RSS/JSON-ленту.",
+    });
   if (syncing.has(source.id))
     return res.status(409).json({ error: "Этот источник уже обновляется" });
   try {
@@ -181,12 +222,10 @@ app.get("/{*path}", (_req, res) =>
 );
 app.use((error, _req, res, _next) => {
   if (error instanceof z.ZodError)
-    return res
-      .status(400)
-      .json({
-        error: "Проверьте поля формы",
-        details: error.issues.map((i) => `${i.path.join(".")}: ${i.message}`),
-      });
+    return res.status(400).json({
+      error: "Проверьте поля формы",
+      details: error.issues.map((i) => `${i.path.join(".")}: ${i.message}`),
+    });
   if (error.type === "entity.parse.failed")
     return res.status(400).json({ error: "Некорректный JSON" });
   console.error(error.message);

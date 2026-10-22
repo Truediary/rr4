@@ -31,6 +31,28 @@ export const reportSchema = z.object({
   catches: z.number().int().min(1).max(10000).default(1),
   author: z.string().trim().min(2).max(80).default("Рыболов"),
   note: z.string().trim().max(2000).default(""),
+  pointLabel: z.string().trim().min(1).max(30).optional(),
+  clip: z.string().trim().max(30).optional(),
+  quality: z.enum(["normal", "trophy", "rare", "record"]).optional(),
+  maxWeightGrams: z.number().nonnegative().max(100000000).optional(),
+  totalWeightGrams: z.number().nonnegative().max(10000000000).optional(),
+  silver: z.number().nonnegative().max(1000000000).optional(),
+  durationMinutes: z.number().positive().max(100000).optional(),
+  temperatureC: z.number().min(-80).max(80).optional(),
+  depthM: z.number().nonnegative().max(1000).optional(),
+  images: z
+    .array(
+      z
+        .url()
+        .refine(
+          (v) =>
+            /^https?:\/\//.test(v) &&
+            !new URL(v).username &&
+            !new URL(v).password,
+        ),
+    )
+    .max(8)
+    .optional(),
   sourceUrl: z
     .url()
     .max(2000)

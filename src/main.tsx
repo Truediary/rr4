@@ -36,6 +36,8 @@ import {
   Copy,
 } from "lucide-react";
 import "./style.css";
+import Explorer from "./Explorer";
+import type { FishingReport as Report } from "../shared/statistics.js";
 
 type Water = {
   id: string;
@@ -43,25 +45,6 @@ type Water = {
   level: number;
   kind: string;
   accent: string;
-};
-type Report = {
-  id: string;
-  waterId: string;
-  fish: string;
-  x: number;
-  y: number;
-  bait: string;
-  tackle: string;
-  weight: string;
-  catches: number;
-  publishedAt: string;
-  author: string;
-  sourceName: string;
-  sourceUrl: string | null;
-  note: string;
-  demo: boolean;
-  mapX?: number;
-  mapY?: number;
 };
 type Source = {
   id: string;
@@ -555,6 +538,23 @@ function App() {
         catches: Number(form.get("catches")),
         note: form.get("note"),
         sourceUrl: form.get("sourceUrl") || null,
+        clip: String(form.get("clip") || ""),
+        quality: form.get("quality") || "normal",
+        ...Object.fromEntries(
+          [
+            "totalWeightGrams",
+            "silver",
+            "durationMinutes",
+            "temperatureC",
+            "depthM",
+          ]
+            .filter((key) => form.get(key) !== null && form.get(key) !== "")
+            .map((key) => [key, Number(form.get(key))]),
+        ),
+        images: String(form.get("images") || "")
+          .split("\n")
+          .map((v) => v.trim())
+          .filter(Boolean),
       };
       await api("/reports", { method: "POST", body: JSON.stringify(body) });
       setDemo(false);
@@ -631,7 +631,7 @@ function App() {
     { id: "favorites" as Page, icon: Bookmark, label: "Избранное" },
   ];
   return (
-    <div className="app">
+    <div className="app reference-layout">
       <aside className={`sidebar ${menu ? "open" : ""}`}>
         <a
           className="brand"
@@ -885,7 +885,19 @@ function App() {
             </button>
             <span className="demo-toggle-label">Демо</span>
           </div>
-          {(page === "spots" || page === "favorites") && (
+          {page === "spots" && (
+            <Explorer
+              reports={reports}
+              waters={waters}
+              demo={demo}
+              loading={loading}
+              favorites={favorites}
+              onFavorite={toggleFavorite}
+              onAdd={() => setModal("report")}
+              onNotify={notify}
+            />
+          )}
+          {page === "favorites" && (
             <>
               <div className="section-heading">
                 <div>
@@ -1615,6 +1627,74 @@ function App() {
                       placeholder="Как к вам обращаться?"
                     />
                   </label>
+                  <details className="extra-report-fields">
+                    <summary>Статистика и снасть — необязательно</summary>
+                    <div className="form-two">
+                      <label>
+                        Суммарный вес улова, г
+                        <input
+                          name="totalWeightGrams"
+                          type="number"
+                          min="0"
+                          step="any"
+                        />
+                      </label>
+                      <label>
+                        Доход, серебра
+                        <input name="silver" type="number" min="0" step="any" />
+                      </label>
+                      <label>
+                        Время рыбалки, мин
+                        <input
+                          name="durationMinutes"
+                          type="number"
+                          min="0.1"
+                          step="any"
+                        />
+                      </label>
+                      <label>
+                        Температура, °C
+                        <input
+                          name="temperatureC"
+                          type="number"
+                          min="-80"
+                          max="80"
+                          step="any"
+                        />
+                      </label>
+                      <label>
+                        Клипса
+                        <input name="clip" maxLength={30} placeholder="25" />
+                      </label>
+                      <label>
+                        Глубина, м
+                        <input
+                          name="depthM"
+                          type="number"
+                          min="0"
+                          max="1000"
+                          step="any"
+                        />
+                      </label>
+                      <label>
+                        Категория
+                        <select name="quality">
+                          <option value="normal">Обычный улов</option>
+                          <option value="trophy">Трофей</option>
+                          <option value="rare">Редкий трофей</option>
+                          <option value="record">Рекорд</option>
+                        </select>
+                      </label>
+                    </div>
+                    <label>
+                      Ссылки на скриншоты
+                      <textarea
+                        name="images"
+                        rows={2}
+                        placeholder="Публичные HTTPS-ссылки, по одной на строку (до 8)"
+                      />
+                    </label>
+                  </details>
                   <label>
                     Ссылка на публикацию <span>необязательно</span>
                     <input
