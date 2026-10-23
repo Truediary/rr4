@@ -1,0 +1,14 @@
+{
+  "realshrimp-6_5-06.png": {
+    "source": "https://github.com/dereklee0310/RussianFishing4Script/blob/612f501b3edc5a6c85feafd5a3985c1823021894/static/readme/favorite_lure.png",
+    "sha256": "b1150a09e30014260ad650456e63e2f5f77fc5f033b3e4e440bc07c3ffc12e17"
+  },
+  "fish-icon.png": {
+    "source": "https://github.com/dereklee0310/RussianFishing4Script/blob/612f501b3edc5a6c85feafd5a3985c1823021894/static/ru/fish_icon.png",
+    "sha256": "cbaeb0864c5649004895606cdbb77975ce66ed4f3b9584d7143fdd69cbbb81c5"
+  },
+  "bait-icon.png": {
+    "source": "https://github.com/dereklee0310/RussianFishing4Script/blob/612f501b3edc5a6c85feafd5a3985c1823021894/static/ru/bait_icon.png",
+    "sha256": "3e92babe98ba9aeea7c54dcf8b833a3cd0bb4e1d608af521c15dbf9b52ddac94"
+  }
+}

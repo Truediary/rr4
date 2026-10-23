@@ -4,7 +4,7 @@ test("reference statistics, water maps, point modal and favorites work", async (
 }) => {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/");
+  await page.goto("/?demo=true");
   await expect(
     page.getByRole("heading", { name: "Точки клёва и статистика" }),
   ).toBeVisible();
@@ -29,21 +29,23 @@ test("reference statistics, water maps, point modal and favorites work", async (
     .getByRole("button", { name: "Избранное", exact: false })
     .first()
     .click();
-  await expect(page.locator(".report-card")).toHaveCount(1);
+  await expect(page.locator(".catch-post")).toHaveCount(1);
   await page.reload();
   await page
     .getByRole("button", { name: "Избранное", exact: false })
     .first()
     .click();
-  await expect(page.locator(".report-card")).toHaveCount(1);
+  await expect(page.locator(".catch-post")).toHaveCount(1);
   expect(errors).toEqual([]);
 });
 test("point statistics and clip filters update post cards; graph renders", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/?demo=true");
   await page
-    .locator('[data-water="norwegian-sea"] .cluster-marker.red')
+    .locator('[data-water="norwegian-sea"] .unmapped-points button')
+    .filter({ hasText: /^34/ })
+    .first()
     .click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toHaveAccessibleName("Точка 34");
@@ -71,7 +73,7 @@ test("point statistics and clip filters update post cards; graph renders", async
   ).toBeVisible();
 });
 test("searches save and restore filters after reload", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/?demo=true");
   await page
     .getByRole("combobox", { name: "Водоём", exact: true })
     .selectOption("copper");
@@ -116,7 +118,7 @@ test("real report metrics and screenshots persist, with no demo pollution", asyn
     .fill("https://example.com/catch.jpg");
   await dialog.getByRole("button", { name: "Опубликовать отчёт" }).click();
   await expect(dialog).toHaveCount(0);
-  await expect(page.getByRole("switch")).not.toBeChecked();
+  await expect(page.getByRole("switch")).toHaveCount(0);
   await expect(page.getByTestId("stat-posts")).toHaveText("1");
   await expect(page.getByTestId("stat-average")).toHaveText("1 500 г");
   await expect(page.getByTestId("stat-farm")).toHaveText("200");
@@ -132,7 +134,6 @@ test("real report metrics and screenshots persist, with no demo pollution", asyn
   expect(reports[0].demo).toBe(false);
   expect(reports[0].totalWeightGrams).toBe(1500);
   await page.reload();
-  await page.getByRole("switch").click();
   await expect(page.getByTestId("stat-posts")).toHaveText("1");
 });
 test("configured map is stored, renders and rejects invalid calibration", async ({
@@ -156,7 +157,7 @@ test("configured map is stored, renders and rejects invalid calibration", async 
       body: '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600"><rect width="600" height="600" fill="#7a9c98"/></svg>',
     }),
   );
-  await page.goto("/");
+  await page.goto("/?demo=true");
   await page
     .getByRole("button", { name: "Настроить карту: Озеро Медное" })
     .click();
@@ -179,7 +180,7 @@ test("source limitations remain visible and unsafe API requests are rejected", a
   page,
   request,
 }) => {
-  await page.goto("/");
+  await page.goto("/?demo=true");
   await page.getByRole("button", { name: "Источники", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Источники" })).toBeVisible();
   await expect(
@@ -210,7 +211,7 @@ test("mobile filters, map modal and water navigation fit the viewport", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
+  await page.goto("/?demo=true");
   await expect(page.locator(".water-stat-card")).toHaveCount(12);
   expect(
     await page.evaluate(
@@ -222,7 +223,11 @@ test("mobile filters, map modal and water navigation fit the viewport", async ({
     .getByRole("combobox", { name: "Водоём", exact: true })
     .selectOption("norwegian-sea");
   await expect(page.locator(".water-stat-card")).toHaveCount(1);
-  await page.locator(".cluster-marker.red").click();
+  await page
+    .locator(".unmapped-points button")
+    .filter({ hasText: /^34/ })
+    .first()
+    .click();
   await expect(page.getByRole("dialog")).toHaveAccessibleName("Точка 34");
   expect(
     await page.evaluate(
@@ -231,5 +236,5 @@ test("mobile filters, map modal and water navigation fit the viewport", async ({
   ).toBe(true);
   await page.getByRole("button", { name: "Закрыть отчёты" }).click();
   await page.getByRole("button", { name: "Водоёмы", exact: true }).click();
-  await expect(page.locator(".water-card")).toHaveCount(12);
+  await expect(page.locator(".water-stat-card")).toHaveCount(12);
 });

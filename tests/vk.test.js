@@ -1,12 +1,54 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { vkDomain, parseVkPosts, importVk } from "../server/vk.js";
+import { vkDomain, parseVkPosts, importVk, vkPhotos } from "../server/vk.js";
 const post = {
   id: 100,
   owner_id: -123,
   date: 1760000000,
   text: "Озеро Старый Острог 47:20\nРыба: Линь\nНаживка: Червь\nСнасть: Донная",
 };
+test("VK imports original photo attachments at the largest size, including reposts", () => {
+  const photo = {
+    type: "photo",
+    photo: {
+      sizes: [
+        { url: "https://example.com/small.jpg", width: 100, height: 80 },
+        { url: "https://example.com/large.jpg", width: 1600, height: 1200 },
+      ],
+    },
+  };
+  const original = {
+    ...post,
+    attachments: [photo],
+    copy_history: [
+      {
+        text: "Дополнение к отчёту",
+        attachments: [
+          photo,
+          {
+            type: "photo",
+            photo: {
+              sizes: [
+                {
+                  url: "https://example.com/second.jpg",
+                  width: 800,
+                  height: 600,
+                },
+              ],
+            },
+          },
+        ],
+      },
+    ],
+  };
+  assert.deepEqual(vkPhotos(original), [
+    "https://example.com/large.jpg",
+    "https://example.com/second.jpg",
+  ]);
+  const parsed = parseVkPosts([original], "pp4wikipedia");
+  assert.equal(parsed.reports[0].images.length, 2);
+  assert.match(parsed.reports[0].note, /Дополнение/);
+});
 test("VK parser requires enough evidence and preserves publication provenance", () => {
   const result = parseVkPosts(
     [post, { ...post, id: 101, text: "Просто фото рыбалки" }],

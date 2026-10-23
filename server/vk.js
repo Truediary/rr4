@@ -15,10 +15,32 @@ export function vkDomain(value) {
 function clean(text) {
   return text.replace(/\[[^|\]]+\|([^\]]+)\]/g, "$1");
 }
+export function vkPhotos(post) {
+  const photos = [];
+  for (const item of [post, ...(post.copy_history || []).slice(0, 4)])
+    for (const attachment of item.attachments || []) {
+      if (attachment.type !== "photo") continue;
+      const sizes = (attachment.photo?.sizes || [])
+        .filter(
+          (size) =>
+            typeof size.url === "string" && size.url.startsWith("https://"),
+        )
+        .sort(
+          (a, b) =>
+            (b.width || 0) * (b.height || 0) - (a.width || 0) * (a.height || 0),
+        );
+      if (sizes[0]) photos.push(sizes[0].url);
+    }
+  return [...new Set(photos)].slice(0, 8);
+}
 export function parseVkPosts(items, domain) {
   let skipped = 0;
   const reports = items.flatMap((post) => {
-    const text = clean(String(post.text ?? ""));
+    const text = clean(
+      [post.text, ...(post.copy_history || []).map((item) => item.text)]
+        .filter(Boolean)
+        .join("\n"),
+    );
     const lower = text.toLowerCase();
     const water = waters.find(
       (w) =>
@@ -55,6 +77,7 @@ export function parseVkPosts(items, domain) {
       bait,
       tackle,
       author: `VK / ${domain}`,
+      images: vkPhotos(post),
       note: text.slice(0, 2000),
       sourceUrl: `https://vk.ru/wall${post.owner_id}_${post.id}`,
       publishedAt: Number.isFinite(post.date)

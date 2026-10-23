@@ -34,9 +34,11 @@ import {
   Database,
   CircleHelp,
   Copy,
+  Camera,
 } from "lucide-react";
 import "./style.css";
 import Explorer from "./Explorer";
+import MediaLibrary, { ImageUpload, MediaProvider } from "./Media";
 import type { FishingReport as Report } from "../shared/statistics.js";
 
 type Water = {
@@ -54,7 +56,7 @@ type Source = {
   checkedAt: string | null;
   status: string | null;
 };
-type Page = "spots" | "waters" | "sources" | "favorites";
+type Page = "spots" | "waters" | "sources" | "favorites" | "media";
 async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`/api${path}`, {
     ...options,
@@ -88,288 +90,15 @@ function readFavorites(): string[] {
   }
 }
 
-function Landscape({ small = false }: { small?: boolean }) {
-  return (
-    <svg
-      className={small ? "landscape small" : "landscape"}
-      viewBox="0 0 1200 300"
-      preserveAspectRatio="xMidYMid slice"
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient id="sky" x2="0" y2="1">
-          <stop stopColor="#537c86" />
-          <stop offset="1" stopColor="#a6b5a5" />
-        </linearGradient>
-        <linearGradient id="lake" x2="0" y2="1">
-          <stop stopColor="#5b8589" />
-          <stop offset="1" stopColor="#153c4e" />
-        </linearGradient>
-        <filter id="grain">
-          <feTurbulence
-            type="fractalNoise"
-            baseFrequency=".7"
-            numOctaves="3"
-            stitchTiles="stitch"
-          />
-          <feColorMatrix type="saturate" values="0" />
-          <feComponentTransfer>
-            <feFuncA type="linear" slope=".09" />
-          </feComponentTransfer>
-          <feBlend in="SourceGraphic" mode="soft-light" />
-        </filter>
-      </defs>
-      <g filter="url(#grain)">
-        <path fill="url(#sky)" d="M0 0h1200v300H0z" />
-        <circle cx="930" cy="52" r="39" fill="#dbd2ab" opacity=".5" />
-        <path
-          fill="#6b8b82"
-          d="M0 110L150 51 299 111 450 75 610 110 850 40 1090 101 1200 60v240H0z"
-        />
-        <path
-          fill="#446e68"
-          d="M0 124L133 90 256 133 500 109 679 135 866 83 1038 107 1200 80v220H0z"
-        />
-        <path fill="url(#lake)" d="M0 150Q290 128 510 158T1200 123v177H0z" />
-        <path
-          fill="#214d46"
-          d="M0 96q140 21 269 67l-120 27L0 183zM1200 108q-160-13-280 60l130 30 150-10z"
-        />
-        {Array.from({ length: 33 }, (_, i) => {
-          const x = i * 42;
-          const y = 110 + Math.sin(i) * 11;
-          return (
-            <g
-              key={i}
-              fill={i < 8 ? "#21493e" : "#294f43"}
-              opacity={i > 8 && i < 23 ? 0.45 : 1}
-            >
-              <path d={`M${x} ${y - 55}l-13 35h7l-17 29h46l-17-29h7z`} />
-              <path d={`M${x - 2} ${y - 3}h4v19h-4z`} />
-            </g>
-          );
-        })}
-        <path
-          d="M420 193h350M540 204h360M310 229h420M670 251h410M502 275h290"
-          stroke="#acc1b1"
-          strokeWidth="1"
-          opacity=".15"
-        />
-        <path fill="#102f2d" d="M0 245q110-43 248 13l157 42H0z" />
-        <path
-          d="M1140 295l-20-85m13 52l-20-15m13-13l12-20M80 300l10-61m-7 39l-12-13"
-          stroke="#143b32"
-          strokeWidth="4"
-        />
-      </g>
-    </svg>
-  );
-}
-
-function LakeMap({
-  reports,
-  selected,
-  onSelect,
-  water,
-}: {
-  reports: Report[];
-  selected: string | null;
-  onSelect: (id: string) => void;
-  water?: Water;
-}) {
-  const [zoom, setZoom] = useState(1);
-  return (
-    <div className="map-shell">
-      <div className="map-top">
-        <span>
-          <MapPin size={15} />
-          {water?.name || "Выберите водоём"}
-        </span>
-        <span className="map-label">СХЕМА ВОДОЁМА</span>
-      </div>
-      <div className="map-canvas">
-        <div className="map-inner" style={{ transform: `scale(${zoom})` }}>
-          <svg
-            viewBox="0 0 800 500"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <defs>
-              <pattern
-                id="terrain"
-                width="35"
-                height="35"
-                patternUnits="userSpaceOnUse"
-              >
-                <circle cx="8" cy="12" r="1" fill="#9fae8d" opacity=".25" />
-                <path d="M24 20l-3 5h6z" fill="#8eaa87" opacity=".25" />
-              </pattern>
-              <pattern
-                id="water"
-                width="22"
-                height="18"
-                patternUnits="userSpaceOnUse"
-              >
-                <path
-                  d="M2 9q5-3 10 0"
-                  fill="none"
-                  stroke="#9bc5c6"
-                  strokeWidth=".7"
-                  opacity=".3"
-                />
-              </pattern>
-              <filter id="blur">
-                <feGaussianBlur stdDeviation="4" />
-              </filter>
-            </defs>
-            <path fill="#dee2cd" d="M0 0h800v500H0z" />
-            <path fill="url(#terrain)" d="M0 0h800v500H0z" />
-            <g fill="none" stroke="#c9d0b7" strokeWidth="1.5">
-              <path d="M-30 180Q80 30 250 68T500 15 810 90" />
-              <path d="M-20 198Q90 53 251 85T500 32 810 109" />
-              <path d="M-20 215Q90 70 250 102T500 49 810 128" />
-              <path d="M0 440Q130 365 250 420T490 430 820 365" />
-              <path d="M0 459Q130 383 250 438T490 449 820 384" />
-              <path d="M550 0q-60 110 160 160t80 200" />
-            </g>
-            <path
-              d="M-20 116Q125 130 141 241T106 500M570-10Q530 100 670 198T811 272"
-              fill="none"
-              stroke="#f2e9cb"
-              strokeWidth="9"
-            />
-            <path
-              d="M-20 116Q125 130 141 241T106 500M570-10Q530 100 670 198T811 272"
-              fill="none"
-              stroke="#c7b999"
-              strokeWidth="1.5"
-              strokeDasharray="5 5"
-            />
-            <path
-              d="M227 87C298 33 341 110 408 94S474 53 529 118 610 150 641 207 590 296 602 353 500 405 460 381 389 434 337 398 227 393 211 335 169 286 199 226 169 130 227 87Z"
-              fill="#bfd4ce"
-              stroke="#b2c7b2"
-              strokeWidth="13"
-            />
-            <path
-              d="M227 87C298 33 341 110 408 94S474 53 529 118 610 150 641 207 590 296 602 353 500 405 460 381 389 434 337 398 227 393 211 335 169 286 199 226 169 130 227 87Z"
-              fill="#a8cdcf"
-              stroke="#92b7b4"
-              strokeWidth="2"
-            />
-            <path d="M0 0h800v500H0z" fill="url(#water)" opacity=".3" />
-            <path
-              d="M296 173Q411 119 526 191T518 332 349 336 296 173Z"
-              fill="none"
-              stroke="#84b6bc"
-              strokeWidth="1"
-              opacity=".6"
-            />
-            <path
-              d="M336 202Q410 165 488 214T475 306 370 301 336 202Z"
-              fill="#92bec4"
-              opacity=".45"
-            />
-            <path
-              d="M351 228q55-46 107 5t-17 59-90-64z"
-              fill="none"
-              stroke="#81afb8"
-              opacity=".6"
-            />
-            <path
-              d="M421 142l15-9 17 8-7 13-19 3z"
-              fill="#d2dbc0"
-              stroke="#95b1a0"
-            />
-            <g fill="#85a37c" opacity=".6">
-              {Array.from({ length: 45 }, (_, i) => (
-                <circle
-                  key={i}
-                  cx={i < 23 ? 40 + (i % 7) * 17 : 665 + (i % 6) * 19}
-                  cy={50 + (i % 17) * 26}
-                  r={7 + (i % 6)}
-                />
-              ))}
-            </g>
-            <g fontFamily="sans-serif" fill="#789aa0" fontSize="12">
-              <text x="410" y="269">
-                6,5 м
-              </text>
-              <text x="297" y="198">
-                3 м
-              </text>
-              <text x="519" y="322">
-                2 м
-              </text>
-            </g>
-            <text x="85" y="405" fill="#8e987c" fontSize="11" letterSpacing="3">
-              ЛЕСНАЯ ТРОПА
-            </text>
-            <g transform="translate(176 325)">
-              <rect width="16" height="12" fill="#a88d6d" />
-              <path d="M-3 0L8-10 19 0" fill="#8c765a" />
-            </g>
-          </svg>
-          {reports.map((r, i) => (
-            <button
-              key={r.id}
-              className={`map-pin ${selected === r.id ? "active" : ""}`}
-              style={{
-                left: `${r.mapX ?? 30 + (r.x % 40)}%`,
-                top: `${r.mapY ?? 25 + (r.y % 45)}%`,
-              }}
-              onClick={() => onSelect(r.id)}
-              title={`${r.fish} · ${r.x}:${r.y}`}
-              aria-label={`Точка ${r.x}:${r.y}, ${r.fish}`}
-            >
-              <span>{i + 1}</span>
-            </button>
-          ))}
-        </div>
-        <div className="map-compass">
-          <Navigation size={20} />
-          <span>С</span>
-        </div>
-        <div className="map-zoom">
-          <button
-            aria-label="Увеличить карту"
-            onClick={() => setZoom((v) => Math.min(1.8, v + 0.2))}
-          >
-            <Plus size={17} />
-          </button>
-          <button
-            aria-label="Уменьшить карту"
-            onClick={() => setZoom((v) => Math.max(1, v - 0.2))}
-          >
-            <ZoomOut size={17} />
-          </button>
-          <button aria-label="Сбросить масштаб" onClick={() => setZoom(1)}>
-            <Crosshair size={17} />
-          </button>
-        </div>
-        <span className="map-disclaimer">
-          Схема · расположение меток условное
-        </span>
-        <span className="map-scale">100 м ━━━</span>
-      </div>
-      <div className="map-bottom">
-        <span>
-          <i className="dot blue" />
-          Точки из списка: {reports.length}
-        </span>
-        <span>Нажмите на метку, чтобы увидеть снасти</span>
-      </div>
-    </div>
-  );
-}
-
 function App() {
   const [page, setPage] = useState<Page>("spots");
   const [waters, setWaters] = useState<Water[]>([]);
   const [fishCatalog, setFishCatalog] = useState<string[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
   const [sources, setSources] = useState<Source[]>([]);
-  const [demo, setDemo] = useState(true);
+  const [demo, setDemo] = useState(
+    () => new URLSearchParams(location.search).get("demo") === "true",
+  );
   const [water, setWater] = useState("old-burg");
   const [fish, setFish] = useState("");
   const [tackle, setTackle] = useState("");
@@ -524,6 +253,10 @@ function App() {
   async function submitReport(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
+    if (form.getAll("_uploadBusy").includes("1")) {
+      notify("Дождитесь окончания загрузки изображений");
+      return;
+    }
     setBusy(true);
     try {
       const body = {
@@ -628,6 +361,7 @@ function App() {
     { id: "spots" as Page, icon: MapPin, label: "Точки клёва" },
     { id: "waters" as Page, icon: Waves, label: "Водоёмы" },
     { id: "sources" as Page, icon: Layers, label: "Источники" },
+    { id: "media" as Page, icon: Camera, label: "Фото и карты" },
     { id: "favorites" as Page, icon: Bookmark, label: "Избранное" },
   ];
   return (
@@ -662,7 +396,7 @@ function App() {
               {n.id === "favorites" && favorites.length > 0 && (
                 <b>{favorites.length}</b>
               )}
-              {n.id === "spots" && <span className="nav-new">LIVE</span>}
+              {n.id === "spots" && <span className="nav-new">РР4</span>}
             </button>
           ))}
         </nav>
@@ -750,105 +484,6 @@ function App() {
           </div>
         </header>
         <main>
-          <section className="hero">
-            <Landscape />
-            <div className="hero-shade" />
-            <div className="hero-content">
-              <div className="hero-eyebrow">
-                <span /> ВАШ ОРИЕНТИР В МИРЕ РР4
-              </div>
-              <h1>
-                Найдите свою
-                <br />
-                точку клёва<span>.</span>
-              </h1>
-              <p>
-                Водоёмы, снасти и опыт рыболовов —<br />
-                всё, что нужно для следующего трофея.
-              </p>
-              <button
-                className="hero-button"
-                onClick={() => setModal("report")}
-              >
-                <Plus size={17} />
-                Поделиться точкой
-                <ArrowUpRight size={16} />
-              </button>
-            </div>
-            <div className="hero-location">
-              <span className="hero-location-icon">
-                <Waves size={22} />
-              </span>
-              <span>
-                Место для новых историй<small>Русская рыбалка 4</small>
-              </span>
-            </div>
-            <span className="hero-art-label">Иллюстрация</span>
-          </section>
-          <section className="stats">
-            <div>
-              <span className="stat-icon blue-soft">
-                <MapPin size={20} />
-              </span>
-              <span>
-                <small>
-                  {demo ? "Точек в демокаталоге" : "Отчётов сообщества"}
-                </small>
-                <strong>
-                  {demo ? reports.length : realCount}
-                  <em>{demo ? "пример интерфейса" : "в базе"}</em>
-                </strong>
-              </span>
-              {demo && (
-                <svg
-                  className="sparkline"
-                  viewBox="0 0 80 25"
-                  aria-hidden="true"
-                >
-                  <path d="M1 22L10 16 22 18 31 9 42 13 54 6 63 9 79 1" />
-                </svg>
-              )}
-            </div>
-            <div>
-              <span className="stat-icon green-soft">
-                <Waves size={20} />
-              </span>
-              <span>
-                <small>Водоёмов в каталоге</small>
-                <strong>
-                  {waters.length}
-                  <em>есть с чего начать</em>
-                </strong>
-              </span>
-            </div>
-            <div>
-              <span className="stat-icon amber-soft">
-                <Fish size={20} />
-              </span>
-              <span>
-                <small>Видов рыб в фильтре</small>
-                <strong>
-                  {fishCatalog.length}
-                  <em>мирные и хищные</em>
-                </strong>
-              </span>
-            </div>
-            <div>
-              <span className="stat-icon violet-soft">
-                <Layers size={20} />
-              </span>
-              <span>
-                <small>Источников с загрузкой</small>
-                <strong>
-                  {
-                    sources.filter((s) => s.status?.startsWith("Добавлено:"))
-                      .length
-                  }
-                  <em>{sources.length} сохранено</em>
-                </strong>
-              </span>
-            </div>
-          </section>
           {error && (
             <div role="alert" className="error-banner">
               {error}
@@ -857,34 +492,29 @@ function App() {
               </button>
             </div>
           )}
-          <div className="demo-banner">
-            <Info size={16} />
-            <span>
-              {demo ? (
-                <>
-                  <strong>Режим знакомства.</strong> Точки и уловы вымышлены.
-                  Реальные отчёты доступны в режиме сообщества.
-                </>
-              ) : (
-                <>
-                  <strong>Отчёты сообщества.</strong>{" "}
-                  {realCount
-                    ? "Уловы добавлены пользователями или импортированы из источников."
-                    : "Поделитесь первой точкой или подключите открытый источник."}
-                </>
-              )}
-            </span>
-            <button
-              role="switch"
-              aria-checked={demo}
-              aria-label="Демонстрационные данные"
-              className={`switch ${demo ? "on" : ""}`}
-              onClick={() => setDemo(!demo)}
-            >
-              <i />
-            </button>
-            <span className="demo-toggle-label">Демо</span>
-          </div>
+          {demo ? (
+            <div className="demo-banner">
+              <Info size={16} />
+              <span>
+                <strong>Тестовые данные.</strong> Этот режим доступен только для
+                разработки.
+              </span>
+              <button onClick={() => setDemo(false)}>
+                Перейти к реальным отчётам
+              </button>
+            </div>
+          ) : (
+            <div className="real-mode-banner">
+              <Camera size={17} />
+              <span>
+                <strong>Реальные отчёты РР4.</strong> Отображаются сохранённые
+                уловы и материалы из игры.
+              </span>
+              <button onClick={() => setPage("media")}>
+                Добавить фото и карты
+              </button>
+            </div>
+          )}
           {page === "spots" && (
             <Explorer
               reports={reports}
@@ -898,402 +528,37 @@ function App() {
             />
           )}
           {page === "favorites" && (
-            <>
-              <div className="section-heading">
-                <div>
-                  <div className="section-eyebrow">
-                    {page === "favorites"
-                      ? "ЛИЧНАЯ КОЛЛЕКЦИЯ"
-                      : "ИССЛЕДУЙТЕ. ВЫБИРАЙТЕ. ЛОВИТЕ."}
-                  </div>
-                  <h2>
-                    {page === "favorites" ? "Избранные точки" : "Точки клёва"}
-                    <span>{filtered.length}</span>
-                  </h2>
-                </div>
-                <div className="heading-meta">
-                  <span className="dot green" />
-                  {demo ? "Демонстрационный каталог" : "Сохранённые отчёты"}
-                  <button onClick={() => setModal("report")}>
-                    <Plus size={15} />
-                    Добавить точку
-                  </button>
-                </div>
-              </div>
-              <div className="filters">
-                <label>
-                  <span>Водоём</span>
-                  <div>
-                    <Waves size={17} />
-                    <select
-                      value={water}
-                      onChange={(e) => {
-                        setWater(e.target.value);
-                        setSelected(null);
-                      }}
-                      aria-label="Водоём"
-                    >
-                      <option value="">Все водоёмы</option>
-                      {waters.map((w) => (
-                        <option key={w.id} value={w.id}>
-                          {w.name}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown size={14} />
-                  </div>
-                </label>
-                <label>
-                  <span>Рыба</span>
-                  <div>
-                    <Fish size={17} />
-                    <select
-                      value={fish}
-                      onChange={(e) => setFish(e.target.value)}
-                      aria-label="Рыба"
-                    >
-                      <option value="">Любая рыба</option>
-                      {Array.from(
-                        new Set([
-                          ...fishCatalog,
-                          ...reports.map((r) => r.fish),
-                        ]),
-                      ).map((f) => (
-                        <option key={f}>{f}</option>
-                      ))}
-                    </select>
-                    <ChevronDown size={14} />
-                  </div>
-                </label>
-                <label>
-                  <span>Снасть</span>
-                  <div>
-                    <Anchor size={17} />
-                    <select
-                      value={tackle}
-                      onChange={(e) => setTackle(e.target.value)}
-                      aria-label="Снасть"
-                    >
-                      <option value="">Любая снасть</option>
-                      {["Донная", "Поплавочная", "Спиннинговая"].map((t) => (
-                        <option key={t}>{t}</option>
-                      ))}
-                    </select>
-                    <ChevronDown size={14} />
-                  </div>
-                </label>
-                <label>
-                  <span>Период</span>
-                  <div>
-                    <Clock3 size={16} />
-                    <select
-                      value={period}
-                      onChange={(e) => setPeriod(e.target.value)}
-                      aria-label="Период"
-                    >
-                      <option value="all">За всё время</option>
-                      <option value="1">За час</option>
-                      <option value="24">За сутки</option>
-                      <option value="168">За неделю</option>
-                    </select>
-                    <ChevronDown size={14} />
-                  </div>
-                </label>
-                <button
-                  className="reset-filters"
-                  title="Сбросить фильтры"
-                  aria-label="Сбросить фильтры"
-                  onClick={reset}
-                >
-                  <SlidersHorizontal size={18} />
-                </button>
-              </div>
-              <div className="results-bar">
-                <div className="search-input">
-                  <Search size={16} />
-                  <input
-                    placeholder="Рыба, наживка или координаты"
-                    aria-label="Поиск точек"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                  />
-                  {query && (
-                    <button
-                      aria-label="Очистить поиск"
-                      onClick={() => setQuery("")}
-                    >
-                      <X size={14} />
-                    </button>
-                  )}
-                </div>
-                <div className="sort-controls">
-                  <select
-                    aria-label="Сортировка"
-                    value={sort}
-                    onChange={(e) => setSort(e.target.value)}
-                  >
-                    <option value="fresh">Сначала свежие</option>
-                    <option value="catches">По количеству уловов</option>
-                  </select>
-                  <div className="view-switch">
-                    <button
-                      aria-label="Карточки"
-                      className={layout === "grid" ? "active" : ""}
-                      onClick={() => setLayout("grid")}
-                    >
-                      <LayoutGrid size={16} />
-                    </button>
-                    <button
-                      aria-label="Список"
-                      className={layout === "list" ? "active" : ""}
-                      onClick={() => setLayout("list")}
-                    >
-                      <List size={18} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div className="workspace-grid">
-                <section
-                  className={`reports ${layout === "list" ? "list-view" : ""}`}
-                >
-                  {loading ? (
-                    <div className="empty-state">
-                      <RefreshCw className="spin" />
-                      Загружаем точки…
-                    </div>
-                  ) : filtered.length ? (
-                    filtered.map((r, i) => (
-                      <article
-                        key={r.id}
-                        className={`report-card ${active?.id === r.id ? "selected" : ""}`}
-                        onClick={() => setSelected(r.id)}
-                      >
-                        <div className="report-card-top">
-                          <span className={`fish-icon fish-tone-${i % 3}`}>
-                            <Fish size={26} />
-                          </span>
-                          <div className="report-title">
-                            <h3>{r.fish}</h3>
-                            <span>
-                              {waters.find((w) => w.id === r.waterId)?.name}
-                            </span>
-                          </div>
-                          <button
-                            className={`favorite-button ${favorites.includes(r.id) ? "saved" : ""}`}
-                            aria-label={`${favorites.includes(r.id) ? "Убрать из избранного" : "В избранное"}: ${r.fish}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleFavorite(r.id);
-                            }}
-                          >
-                            <Bookmark
-                              size={17}
-                              fill={
-                                favorites.includes(r.id)
-                                  ? "currentColor"
-                                  : "none"
-                              }
-                            />
-                          </button>
-                        </div>
-                        <div className="coordinate-row">
-                          <span className="coordinates">
-                            <MapPin size={15} />
-                            {r.x}:{r.y}
-                          </span>
-                          <span className="tackle-badge">{r.tackle}</span>
-                          {r.catches >= 15 && (
-                            <span className="hot-badge">
-                              <Flame size={12} />
-                            </span>
-                          )}
-                        </div>
-                        <div className="bait-row">
-                          <span>Наживка</span>
-                          <strong>{r.bait}</strong>
-                        </div>
-                        <div className="catch-row">
-                          <span>
-                            <Fish size={14} />
-                            <b>{r.catches}</b> уловов
-                          </span>
-                          {r.weight && (
-                            <span>
-                              до <b>{r.weight}</b>
-                            </span>
-                          )}
-                          <span className="catch-bars" aria-hidden="true">
-                            {[3, 5, 4, 7, 6, 9, 8, 11, 9, 13].map((v, k) => (
-                              <i key={k} style={{ height: `${v}px` }} />
-                            ))}
-                          </span>
-                        </div>
-                        <div className="report-footer">
-                          <span>
-                            <i className={`dot ${r.demo ? "amber" : "blue"}`} />
-                            {r.demo ? "Демо" : r.sourceName}
-                          </span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDetail(r);
-                            }}
-                          >
-                            {timeAgo(r.publishedAt)}
-                            <ArrowUpRight size={13} />
-                          </button>
-                        </div>
-                      </article>
-                    ))
-                  ) : (
-                    <div className="empty-state">
-                      <MapPin size={32} />
-                      <h3>
-                        {page === "favorites"
-                          ? "Здесь будут ваши находки"
-                          : "Пока нет подходящих точек"}
-                      </h3>
-                      <p>
-                        {page === "favorites"
-                          ? "Нажмите на закладку в карточке, чтобы сохранить точку."
-                          : "Измените фильтры или поделитесь своим отчётом."}
-                      </p>
-                      <button
-                        className="primary-button"
-                        onClick={
-                          page === "favorites"
-                            ? () => changePage("spots")
-                            : () => setModal("report")
-                        }
-                      >
-                        {page === "favorites"
-                          ? "Найти точки"
-                          : "Добавить точку"}
-                        <ArrowRight size={15} />
-                      </button>
-                    </div>
-                  )}
-                </section>
-                <aside className="map-column">
-                  <LakeMap
-                    reports={water ? filtered : []}
-                    selected={active?.id ?? null}
-                    water={currentWater}
-                    onSelect={setSelected}
-                  />
-                  {!water && (
-                    <div className="map-note">
-                      <Info size={15} />
-                      Выберите водоём, чтобы увидеть точки на схеме.
-                    </div>
-                  )}
-                  {active && (
-                    <div className="selected-point">
-                      <div className="selected-point-heading">
-                        <span>
-                          <span className="dot blue" />
-                          ВЫБРАННАЯ ТОЧКА
-                        </span>
-                        <button onClick={() => setDetail(active)}>
-                          Подробнее
-                          <ArrowUpRight size={13} />
-                        </button>
-                      </div>
-                      <div className="selected-point-content">
-                        <span className="point-number">
-                          {filtered.findIndex((r) => r.id === active.id) + 1}
-                        </span>
-                        <div>
-                          <h3>
-                            {active.fish}
-                            <span>
-                              {active.x}:{active.y}
-                            </span>
-                          </h3>
-                          <p>
-                            {active.bait} <span>·</span> {active.tackle}
-                          </p>
-                        </div>
-                        <button
-                          aria-label="Скопировать координаты"
-                          onClick={() =>
-                            navigator.clipboard
-                              ?.writeText(`${active.x}:${active.y}`)
-                              .then(() => notify("Координаты скопированы"))
-                              .catch(() =>
-                                notify(`Координаты: ${active.x}:${active.y}`),
-                              )
-                          }
-                        >
-                          <Copy size={15} />
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  <div className="tip-card">
-                    <span className="tip-icon">
-                      <Compass size={21} />
-                    </span>
-                    <div>
-                      <strong>Клёв — дело переменчивое</strong>
-                      <p>
-                        Смотрите на дату отчёта. Погода, время суток и прикормка
-                        влияют на результат.
-                      </p>
-                    </div>
-                  </div>
-                </aside>
-              </div>
-            </>
+            <Explorer
+              key="favorites"
+              title="Избранные точки"
+              initialView="posts"
+              reports={reports.filter((report) =>
+                favorites.includes(report.id),
+              )}
+              waters={waters}
+              demo={demo}
+              loading={loading}
+              favorites={favorites}
+              onFavorite={toggleFavorite}
+              onAdd={() => setModal("report")}
+              onNotify={notify}
+            />
           )}
           {page === "waters" && (
-            <>
-              <div className="section-heading">
-                <div>
-                  <div className="section-eyebrow">
-                    ОТ ПЕРВОЙ РЫБЫ ДО ТРОФЕЯ
-                  </div>
-                  <h2>
-                    Водоёмы<span>{waters.length}</span>
-                  </h2>
-                </div>
-                <p className="subtle">Выберите место для следующей рыбалки</p>
-              </div>
-              <div className="waters-grid">
-                {waters.map((w, i) => (
-                  <button
-                    key={w.id}
-                    className="water-card"
-                    onClick={() => {
-                      setWater(w.id);
-                      setPage("spots");
-                      setFish("");
-                      setTackle("");
-                      setQuery("");
-                    }}
-                  >
-                    <div className={`water-art water-art-${i % 4}`}>
-                      <Landscape small />
-                      <span>УРОВЕНЬ {w.level}+</span>
-                      <div className="water-art-symbol">
-                        <Waves size={37} />
-                      </div>
-                    </div>
-                    <div className="water-card-info">
-                      <span>{w.kind}</span>
-                      <h3>{w.name}</h3>
-                      <p>
-                        {reports.filter((r) => r.waterId === w.id).length}{" "}
-                        {demo ? "демоточек" : "отчётов"}
-                        <ArrowRight size={18} />
-                      </p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </>
+            <Explorer
+              key="waters"
+              title="Водоёмы РР4"
+              reports={reports}
+              waters={waters}
+              demo={demo}
+              loading={loading}
+              favorites={favorites}
+              onFavorite={toggleFavorite}
+              onAdd={() => setModal("report")}
+              onNotify={notify}
+            />
           )}
+          {page === "media" && <MediaLibrary onNotify={notify} />}
           {page === "sources" && (
             <>
               <div className="section-heading">
@@ -1686,15 +951,11 @@ function App() {
                         </select>
                       </label>
                     </div>
-                    <label>
-                      Ссылки на скриншоты
-                      <textarea
-                        name="images"
-                        rows={2}
-                        placeholder="Публичные HTTPS-ссылки, по одной на строку (до 8)"
-                      />
-                    </label>
                   </details>
+                  <div className="form-field">
+                    <span>Скриншоты улова</span>
+                    <ImageUpload name="images" />
+                  </div>
                   <label>
                     Ссылка на публикацию <span>необязательно</span>
                     <input
@@ -1807,15 +1068,15 @@ function App() {
                     <span>02</span>
                     <p>
                       <strong>Изучите точку</strong>Посмотрите координаты,
-                      наживку и источник публикации. Схема водоёма
-                      иллюстративная.
+                      наживку и источник публикации. Для точных меток подключите
+                      изображение карты из игры.
                     </p>
                   </div>
                   <div>
                     <span>03</span>
                     <p>
                       <strong>Поделитесь результатом</strong>Добавьте свой улов
-                      — он сохранится отдельно от демонстрационных данных.
+                      — он сохранится в базе сообщества со скриншотами.
                     </p>
                   </div>
                 </div>
@@ -1913,6 +1174,8 @@ function App() {
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    <MediaProvider>
+      <App />
+    </MediaProvider>
   </React.StrictMode>,
 );

@@ -39,6 +39,7 @@ import {
 } from "../shared/statistics.js";
 import type { FishingReport, Filters, Group } from "../shared/statistics.js";
 import "./explorer.css";
+import { GameImage, ImageUpload, useMedia } from "./Media";
 
 type Water = {
   id: string;
@@ -125,46 +126,6 @@ async function mapRequest(path: string, options: RequestInit = {}) {
   return data;
 }
 
-function FishPicture({ variant = 0 }: { variant?: number }) {
-  return (
-    <svg
-      className={`fish-picture fish-picture-${variant % 4}`}
-      viewBox="0 0 130 48"
-      role="img"
-      aria-label="Иллюстрация рыбы"
-    >
-      <defs>
-        <linearGradient id={`fish-tone-${variant % 4}`} x2="0" y2="1">
-          <stop stopColor="#65776e" />
-          <stop offset=".45" stopColor="#a8b4a0" />
-          <stop offset=".7" stopColor="#d5d5b6" />
-          <stop offset="1" stopColor="#858b77" />
-        </linearGradient>
-      </defs>
-      <path d="M27 24L5 8l4 16-4 15 22-13" fill="#7f8977" stroke="#616e65" />
-      <path
-        d="M24 24C40 9 78 9 108 19l15 6-16 7C76 44 43 38 24 24Z"
-        fill={`url(#fish-tone-${variant % 4})`}
-        stroke="#6d776a"
-      />
-      <path
-        d="M47 14l18-12 16 12M55 34l9 11 14-9"
-        fill="#8c9580"
-        stroke="#79836f"
-      />
-      <path
-        d="M39 21l55 4M44 29l42 2"
-        stroke="#dbe1c7"
-        strokeWidth=".8"
-        opacity=".7"
-      />
-      <path d="M99 19q-7 9-1 15" fill="none" stroke="#727e6e" />
-      <circle cx="109" cy="22" r="2" fill="#2d3e38" />
-      <circle cx="109.5" cy="21.5" r=".7" fill="white" />
-    </svg>
-  );
-}
-
 function GroupList({
   title,
   groups,
@@ -220,11 +181,17 @@ function GroupList({
             title={`${g.label}: ${g.posts} постов, ${g.catches} уловов`}
           >
             {kind === "fish" ? (
-              <FishPicture variant={i} />
+              <GameImage
+                kind="fish"
+                entity={g.label}
+                className="catalog-game-image"
+              />
             ) : kind === "bait" ? (
-              <span className={`bait-mini bait-${i % 5}`}>
-                <Anchor size={12} />
-              </span>
+              <GameImage
+                kind="bait"
+                entity={g.label}
+                className="catalog-game-image"
+              />
             ) : kind === "clip" ? (
               <span className="clip-token">{g.label}</span>
             ) : null}
@@ -559,153 +526,6 @@ function Statistics({
   );
 }
 
-function Terrain({
-  id,
-  sea,
-  river,
-}: {
-  id: string;
-  sea: boolean;
-  river: boolean;
-}) {
-  const waterPath = river
-    ? "M100-40Q510 40 170 155T410 330 210 600L365 600Q650 405 360 290T350 130 300-40Z"
-    : sea
-      ? "M310-20Q230 40 310 100T235 215 310 340 200 520L620 620V-20Z"
-      : "M149 83Q237 16 350 91T473 201 419 303 453 421 280 495 170 418 102 320 132 202 149 83Z";
-  return (
-    <svg viewBox="0 0 600 600" preserveAspectRatio="none" aria-hidden="true">
-      <defs>
-        <pattern
-          id={`${id}-paper`}
-          width="17"
-          height="17"
-          patternUnits="userSpaceOnUse"
-        >
-          <path d="M2 4l1-1m8 10h1" stroke="#7c7d5b" opacity=".2" />
-        </pattern>
-        <pattern
-          id={`${id}-grid`}
-          width="60"
-          height="60"
-          patternUnits="userSpaceOnUse"
-        >
-          <path
-            d="M60 0H0V60"
-            fill="none"
-            stroke="#5a654a"
-            strokeWidth=".8"
-            opacity=".5"
-          />
-        </pattern>
-        <filter id={`${id}-grain`}>
-          <feTurbulence
-            baseFrequency=".7"
-            numOctaves="2"
-            stitchTiles="stitch"
-          />
-          <feColorMatrix type="saturate" values="0" />
-          <feComponentTransfer>
-            <feFuncA type="linear" slope=".10" />
-          </feComponentTransfer>
-          <feBlend in="SourceGraphic" mode="multiply" />
-        </filter>
-      </defs>
-      <g filter={`url(#${id}-grain)`}>
-        <path d="M0 0h600v600H0z" fill="#bdbb94" />
-        <g fill="#899777" opacity=".45">
-          <path d="M0 20Q90 100 80 240T50 600H0z" />
-          <path d="M530 0Q455 100 510 210T560 490L600 600V0z" />
-          <path d="M0 460Q100 360 270 470T600 480v120H0z" />
-        </g>
-        <g fill="none" stroke="#999d75" strokeWidth="2">
-          {[0, 1, 2, 3, 4].map((i) => (
-            <path
-              key={i}
-              d={`M${i * 9 - 30} 80Q160 ${80 + i * 17} 280 ${27 + i * 13}T640 ${55 + i * 14}`}
-            />
-          ))}
-          {[0, 1, 2, 3].map((i) => (
-            <path
-              key={i}
-              d={`M0 ${480 + i * 12}Q200 ${420 + i * 18} 330 ${490 + i * 14}T630 ${450 + i * 14}`}
-            />
-          ))}
-        </g>
-        <path
-          d={waterPath}
-          fill={sea ? "#5d8d9c" : "#718e81"}
-          stroke="#8a9984"
-          strokeWidth="12"
-        />
-        <path
-          d={waterPath}
-          fill={sea ? "#6996a6" : "#739288"}
-          stroke="#667d70"
-          strokeWidth="2"
-        />
-        <path
-          d={waterPath}
-          fill="none"
-          stroke={sea ? "#40778c" : "#547971"}
-          strokeWidth="1"
-        />
-        <path
-          d={
-            sea
-              ? "M420 0Q275 200 470 340T410 650"
-              : river
-                ? "M290-40Q490 20 280 160T430 340 340 640"
-                : "M227 146Q420 100 388 269T280 406 201 275 227 146Z"
-          }
-          fill="none"
-          stroke={sea ? "#3d7188" : "#4e7b72"}
-          strokeWidth={sea ? 65 : river ? 23 : 35}
-          opacity=".45"
-        />
-        <path
-          d="M-10 110Q80 80 97 265T45 610M508-30Q470 40 520 140T565 640"
-          fill="none"
-          stroke="#d3c8a1"
-          strokeWidth="7"
-        />
-        <path
-          d="M-10 110Q80 80 97 265T45 610M508-30Q470 40 520 140T565 640"
-          fill="none"
-          stroke="#807d60"
-          strokeDasharray="5 6"
-          strokeWidth="1"
-        />
-        <path d="M0 0h600v600H0z" fill={`url(#${id}-paper)`} />
-        <path d="M0 0h600v600H0z" fill={`url(#${id}-grid)`} />
-        <g fill="#435d59" opacity=".65" fontSize="9" fontFamily="serif">
-          <text x="245" y="240">
-            {sea ? "218" : "6,5"}
-          </text>
-          <text x="320" y="350">
-            {sea ? "360" : "4,2"}
-          </text>
-          <text x="180" y="370">
-            {sea ? "128" : "3,0"}
-          </text>
-        </g>
-        <g fontFamily="serif" fontSize="9" fill="#4d533f">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
-            <g key={i}>
-              <text x={i * 60 - 4} y="12">
-                {i * 20}
-              </text>
-              <text x="4" y={i * 60}>
-                {i * 20}
-              </text>
-            </g>
-          ))}
-        </g>
-      </g>
-    </svg>
-  );
-}
-
 function WaterMap({
   water,
   reports,
@@ -722,35 +542,15 @@ function WaterMap({
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
   const drag = useRef<{ x: number; y: number; ox: number; oy: number } | null>(
     null,
   );
   const groups = groupReports(reports, "point");
-  useEffect(() => {
-    setReady(false);
-    setZoom(1);
-    setOffset({ x: 0, y: 0 });
-  }, [map?.url]);
-  const xs = reports.map((r) => r.x),
-    ys = reports.map((r) => r.y);
-  const minX = Math.min(...xs),
-    maxX = Math.max(...xs),
-    minY = Math.min(...ys),
-    maxY = Math.max(...ys);
-  function position(r: FishingReport) {
-    if (map && ready) {
-      const x = ((r.x - map.minX) / (map.maxX - map.minX)) * 100;
-      const y = ((r.y - map.minY) / (map.maxY - map.minY)) * 100;
-      return { x, y: map.flipY ? 100 - y : y };
-    }
-    return {
-      x:
-        r.mapX ?? (maxX > minX ? 18 + ((r.x - minX) / (maxX - minX)) * 64 : 50),
-      y:
-        r.mapY ?? (maxY > minY ? 18 + ((r.y - minY) / (maxY - minY)) * 64 : 50),
-    };
-  }
   const summary = summarize(reports);
+  const { assets } = useMedia();
+  const source = assets.find((a) => a.url === map?.url)?.sourceUrl;
+
   return (
     <article className="water-stat-card" data-water={water.id}>
       <header>
@@ -760,12 +560,8 @@ function WaterMap({
         >
           {water.name}
         </button>
-        <button
-          className="water-info-button"
-          onClick={onConfigure}
-          title="Изображение и координаты карты"
-        >
-          О водоёме
+        <button className="water-info-button" onClick={onConfigure}>
+          Карта
         </button>
         <span className="water-temperature">
           <Thermometer size={12} />
@@ -787,7 +583,7 @@ function WaterMap({
         <span>Точек {groups.length}</span>
       </div>
       <div className="water-summary">
-        Посты: <b>{summary.posts}</b> Улов: <b>{summary.catches}</b>{" "}
+        Посты: <b>{summary.posts}</b> Улов: <b>{summary.catches}</b>
         <button onClick={() => onPoint("water:" + water.id)}>Подробнее</button>
       </div>
       <div
@@ -828,79 +624,151 @@ function WaterMap({
             transform: `translate(${offset.x}px,${offset.y}px) scale(${zoom})`,
           }}
         >
-          <Terrain
-            id={water.id}
-            sea={water.kind === "Море"}
-            river={water.kind === "Река"}
-          />
           {map && (
             <img
               className={`real-water-map ${ready ? "ready" : ""}`}
               src={map.url}
               alt={`Карта: ${water.name}`}
-              onLoad={() => setReady(true)}
-              onError={() => setReady(false)}
+              onLoad={() => {
+                setReady(true);
+                setFailed(false);
+              }}
+              onError={() => {
+                setReady(false);
+                setFailed(true);
+              }}
               draggable={false}
             />
           )}
-          <span className="map-water-label">{water.name}</span>
-          {groups.map((g) => {
-            const p = position(g.report);
-            if (p.x < 0 || p.x > 100 || p.y < 0 || p.y > 100) return null;
-            return (
-              <button
-                key={g.key}
-                className={`cluster-marker ${g.posts >= 3 ? "red" : g.posts >= 2 ? "yellow" : "green"}`}
-                style={{ left: `${p.x}%`, top: `${p.y}%` }}
-                aria-label={`${water.name}, точка ${g.label}: ${g.posts} постов`}
-                onClick={() => onPoint(g.key)}
-              >
-                <span>{g.posts > 1 ? g.posts : ""}</span>
-              </button>
-            );
-          })}
+          {!(map && ready) && (
+            <div className="real-image-missing">
+              <MapPin size={27} />
+              <strong>
+                {map && !failed
+                  ? "Загрузка карты…"
+                  : map
+                    ? "Изображение карты недоступно"
+                    : "Карта из игры не добавлена"}
+              </strong>
+              <span>
+                Загрузите скриншот карты и укажите координаты её краёв.
+              </span>
+              <button onClick={onConfigure}>Подключить карту</button>
+            </div>
+          )}
+          {map &&
+            ready &&
+            groups.map((g) => {
+              const x = ((g.report.x - map.minX) / (map.maxX - map.minX)) * 100;
+              const normalizedY =
+                ((g.report.y - map.minY) / (map.maxY - map.minY)) * 100;
+              const y = map.flipY ? 100 - normalizedY : normalizedY;
+              if (x < 0 || x > 100 || y < 0 || y > 100) return null;
+              return (
+                <button
+                  key={g.key}
+                  className={`cluster-marker ${g.posts >= 3 ? "red" : g.posts >= 2 ? "yellow" : "green"}`}
+                  style={{ left: `${x}%`, top: `${y}%` }}
+                  aria-label={`${water.name}, точка ${g.label}: ${g.posts} постов`}
+                  onClick={() => onPoint(g.key)}
+                >
+                  <span>{g.posts > 1 ? g.posts : ""}</span>
+                </button>
+              );
+            })}
         </div>
-        <div className="reference-map-tools">
-          <button
-            aria-label={`Увеличить: ${water.name}`}
-            onClick={() => setZoom((v) => Math.min(3, v + 0.5))}
-          >
-            <Plus size={19} />
-          </button>
-          <button
-            aria-label={`Уменьшить: ${water.name}`}
-            onClick={() => {
-              setZoom((v) => Math.max(1, v - 0.5));
-              setOffset({ x: 0, y: 0 });
-            }}
-          >
-            <Minus size={17} />
-          </button>
-          <button
-            aria-label={`Сбросить карту: ${water.name}`}
-            onClick={() => {
-              setZoom(1);
-              setOffset({ x: 0, y: 0 });
-            }}
-          >
-            <Crosshair size={15} />
-          </button>
-        </div>
+        {map && ready && (
+          <div className="reference-map-tools">
+            <button
+              aria-label={`Увеличить: ${water.name}`}
+              onClick={() => setZoom((v) => Math.min(3, v + 0.5))}
+            >
+              <Plus size={19} />
+            </button>
+            <button
+              aria-label={`Уменьшить: ${water.name}`}
+              onClick={() => {
+                setZoom((v) => Math.max(1, v - 0.5));
+                setOffset({ x: 0, y: 0 });
+              }}
+            >
+              <Minus size={17} />
+            </button>
+            <button
+              aria-label={`Сбросить карту: ${water.name}`}
+              onClick={() => {
+                setZoom(1);
+                setOffset({ x: 0, y: 0 });
+              }}
+            >
+              <Crosshair size={15} />
+            </button>
+          </div>
+        )}
         <span className="map-status-badge">
-          {map && ready ? "Карта пользователя" : "УСЛОВНАЯ СХЕМА"}
+          {map && ready ? "Карта пользователя" : "Нет игровой карты"}
         </span>
-        <span className="map-caption">
-          {map && !ready
-            ? "Изображение карты недоступно · показана схема"
-            : map && ready
-              ? "Метки по настроенной координатной сетке"
-              : "Расположение меток условное"}
-        </span>
-        {!reports.length && (
+        {map && ready && (
+          <span className="map-caption">
+            Метки по настроенной сетке{" "}
+            {source && (
+              <a href={source} target="_blank" rel="noreferrer">
+                Источник
+              </a>
+            )}
+          </span>
+        )}
+        {!reports.length && map && ready && (
           <span className="no-map-data">Нет отчётов за выбранный период</span>
         )}
       </div>
+      {!(map && ready) && groups.length > 0 && (
+        <div className="unmapped-points">
+          {groups.map((g) => (
+            <button
+              key={g.key}
+              onClick={() => onPoint(g.key)}
+              aria-label={`Открыть точку ${g.label}: ${water.name}`}
+            >
+              {g.label}
+              <b>{g.posts} пост.</b>
+            </button>
+          ))}
+        </div>
+      )}
     </article>
+  );
+}
+
+function ReportPhoto({
+  report,
+  onImage,
+}: {
+  report: FishingReport;
+  onImage: (url: string) => void;
+}) {
+  const [failed, setFailed] = useState(false);
+  const url = report.images?.[0];
+  useEffect(() => setFailed(false), [url]);
+  return url && !failed ? (
+    <button
+      className="post-photo-preview"
+      onClick={() => onImage(url)}
+      aria-label="Открыть фото улова"
+    >
+      <img
+        src={url}
+        alt={`Улов: ${report.fish}`}
+        onError={() => setFailed(true)}
+      />
+    </button>
+  ) : (
+    <GameImage
+      kind="fish"
+      entity={report.fish}
+      className="specimen-game-image"
+      fallback="Скриншот не добавлен"
+    />
   );
 }
 
@@ -954,7 +822,7 @@ function CatchCard({
             <Bookmark size={17} fill={favorite ? "currentColor" : "none"} />
           </button>
           <div className="fish-catch-specimen">
-            <FishPicture variant={report.fish.length} />
+            <ReportPhoto report={report} onImage={onImage} />
             <span>
               {grams(report.maxWeightGrams ?? weightInGrams(report.weight))}
             </span>
@@ -1050,8 +918,12 @@ export default function Explorer({
   onFavorite,
   onAdd,
   onNotify,
+  title: heading = "Точки клёва и статистика",
+  initialView = "maps",
 }: {
   reports: FishingReport[];
+  title?: string;
+  initialView?: string;
   waters: Water[];
   demo: boolean;
   loading: boolean;
@@ -1062,7 +934,7 @@ export default function Explorer({
 }) {
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [sort, setSort] = useState("catches");
-  const [view, setView] = useState("maps");
+  const [view, setView] = useState(initialView);
   const [point, setPoint] = useState<string | null>(null);
   const [mapEditor, setMapEditor] = useState<Water | null>(null);
   const [maps, setMaps] = useState<Record<string, MapConfig>>({});
@@ -1212,6 +1084,10 @@ export default function Explorer({
     e.preventDefault();
     if (!mapEditor) return;
     const form = new FormData(e.currentTarget);
+    if (form.getAll("_uploadBusy").includes("1")) {
+      onNotify("Дождитесь загрузки карты");
+      return;
+    }
     setSavingMap(true);
     try {
       const config = await mapRequest("/" + mapEditor.id, {
@@ -1239,7 +1115,7 @@ export default function Explorer({
       <div className="reference-heading">
         <div>
           <span>РУССКАЯ РЫБАЛКА 4 / НАВИГАТОР</span>
-          <h1>Точки клёва и статистика</h1>
+          <h1>{heading}</h1>
         </div>
         <button className="reference-add" onClick={onAdd}>
           <Plus size={14} />
@@ -1354,7 +1230,7 @@ export default function Explorer({
               <div className="water-map-grid">
                 {actualWaters.map(({ water, reports }) => (
                   <WaterMap
-                    key={water.id}
+                    key={`${water.id}:${maps[water.id]?.url || ""}`}
                     water={water}
                     reports={reports}
                     map={maps[water.id]}
@@ -1706,15 +1582,16 @@ export default function Explorer({
                 укажите координаты его краёв. Настройка общая для всех
                 посетителей этого экземпляра сайта.
               </p>
-              <label>
-                Адрес изображения
-                <input
+              <div className="form-field">
+                <span>Карта из игры</span>
+                <ImageUpload
+                  kind="map"
                   name="url"
+                  single
                   required
                   defaultValue={maps[mapEditor.id]?.url || ""}
-                  placeholder="https://example.com/map.jpg или /maps/map.jpg"
                 />
-              </label>
+              </div>
               <div className="map-bounds">
                 {[
                   ["minX", "X слева", 0],
@@ -1747,8 +1624,8 @@ export default function Explorer({
                 Y растёт снизу вверх
               </label>
               <p className="map-editor-note">
-                Пока изображение не подключено, используется условная схема.
-                Исходные игровые карты в проект не включены.
+                Загрузите настоящий скриншот карты из игры. Без изображения
+                метки на вымышленной местности не показываются.
               </p>
               <div className="map-editor-actions">
                 <button
@@ -1780,7 +1657,7 @@ export default function Explorer({
                       }
                     }}
                   >
-                    Вернуть схему
+                    Отключить карту
                   </button>
                 )}
               </div>

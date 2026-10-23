@@ -12,6 +12,9 @@ import {
   parseSource,
 } from "./importer.js";
 import { importVk, vkDomain } from "./vk.js";
+import { imageUpload, saveImage } from "./media.js";
+import { isImageReference } from "../shared/media.js";
+import { bundledMedia } from './bundled-media.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dataDir = process.env.DATA_DIR ?? resolve(root, "data");
@@ -47,7 +50,12 @@ app.use("/api", (req, res, next) => {
     const origin = req.get("origin");
     if (origin && new URL(origin).host !== req.get("host"))
       return res.status(403).json({ error: "Запрос с другого сайта запрещён" });
-    if (!req.is("application/json"))
+    if (req.path === "/media" && req.method === "POST") {
+      if (!req.is("multipart/form-data"))
+        return res
+          .status(415)
+          .json({ error: "Требуется загрузка файла multipart/form-data" });
+    } else if (!req.is("application/json"))
       return res.status(415).json({ error: "Требуется application/json" });
   }
   next();
@@ -56,6 +64,14 @@ app.get("/api/health", (_req, res) =>
   res.json({ status: "ok", database: "sqlite" }),
 );
 app.get("/api/catalog", (_req, res) => res.json({ waters, fish }));
+app.get("/api/media", (_req, res) => res.json([...store.media(),...bundledMedia]));
+app.post("/api/media", imageUpload, async (req, res) =>
+  res
+    .status(201)
+    .json(
+      await saveImage(req.file, req.body, resolve(dataDir, "media"), store),
+    ),
+);
 app.get("/api/maps", (_req, res) =>
   res.json(JSON.parse(store.getSetting("waterMaps") || "{}")),
 );
@@ -67,12 +83,7 @@ const mapSchema = z
       .refine((value) => {
         if (/^\/maps\/[a-zA-Z0-9_./-]+$/.test(value) && !value.includes(".."))
           return true;
-        try {
-          const url = new URL(value);
-          return url.protocol === "https:" && !url.username && !url.password;
-        } catch {
-          return false;
-        }
+        return isImageReference(value);
       }),
     minX: z.number().finite(),
     maxX: z.number().finite(),
@@ -99,9 +110,19 @@ app.delete("/api/maps/:waterId", (req, res) => {
   store.setSetting("waterMaps", JSON.stringify(maps));
   res.json({ ok: true });
 });
-app.get("/api/reports", (req, res) =>
-  res.json(req.query.demo === "true" ? demoReports() : store.reports()),
-);
+app.get("/api/reports", (req, res) => {
+  if (req.query.demo === "true") {
+    if (process.env.ALLOW_DEMO_DATA !== "1")
+      return res
+        .status(400)
+        .json({
+          error:
+            "Демонстрационные данные отключены. Используйте реальные отчёты.",
+        });
+    return res.json(demoReports());
+  }
+  res.json(store.reports());
+});
 app.post("/api/reports", (req, res) => {
   const report = reportSchema.parse(req.body);
   const saved = store.addReport(report);
@@ -216,11 +237,32 @@ app.delete("/api/sources/:id", (req, res) => {
 app.use("/api", (_req, res) =>
   res.status(404).json({ error: "Метод API не найден" }),
 );
+app.use(
+  "/media",
+  express.static(resolve(dataDir, "media"), {
+    dotfiles: "deny",
+    fallthrough: false,
+    setHeaders(res) {
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.setHeader("Content-Security-Policy", "default-src 'none'");
+    },
+  }),
+);
 app.use(express.static(resolve(root, "dist")));
 app.get("/{*path}", (_req, res) =>
   res.sendFile(resolve(root, "dist/index.html")),
 );
 app.use((error, _req, res, _next) => {
+  if (error.status === 404)
+    return res.status(404).json({ error: "Файл не найден" });
+  if (error.code === "LIMIT_FILE_SIZE")
+    return res
+      .status(413)
+      .json({ error: "Изображение должно быть не больше 10 МБ" });
+  if (error.code?.startsWith("LIMIT_"))
+    return res
+      .status(400)
+      .json({ error: "Загружайте по одному изображению (PNG, JPEG, WebP)" });
   if (error instanceof z.ZodError)
     return res.status(400).json({
       error: "Проверьте поля формы",

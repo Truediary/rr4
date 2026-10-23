@@ -4,6 +4,7 @@ import { XMLParser } from "fast-xml-parser";
 import { z } from "zod";
 import { waters } from "./catalog.js";
 import { HttpsProxyAgent } from "https-proxy-agent";
+import { isImageReference } from "../shared/media.js";
 
 const proxyAddress = () => process.env.HTTPS_PROXY || process.env.https_proxy;
 function proxyAllowedHosts() {
@@ -43,12 +44,10 @@ export const reportSchema = z.object({
   images: z
     .array(
       z
-        .url()
+        .string()
         .refine(
-          (v) =>
-            /^https?:\/\//.test(v) &&
-            !new URL(v).username &&
-            !new URL(v).password,
+          isImageReference,
+          "Нужна HTTPS-ссылка или загруженное изображение",
         ),
     )
     .max(8)

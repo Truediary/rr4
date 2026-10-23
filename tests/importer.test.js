@@ -159,3 +159,26 @@ test("proxy mode requires an administrator-approved exact hostname", async () =>
     else process.env.FEED_ALLOWED_HOSTS = previousHosts;
   }
 });
+test("reimport refreshes source photo URLs without creating another report", () => {
+  const store = openDatabase(":memory:");
+  const first = store.addReport(
+    { ...report, images: ["https://example.com/old.jpg"] },
+    "VK",
+    "vk-source",
+  );
+  assert.ok(first);
+  assert.equal(
+    store.addReport(
+      { ...report, images: ["https://example.com/fresh.jpg"] },
+      "VK",
+      "vk-source",
+    ),
+    null,
+  );
+  assert.equal(store.reports().length, 1);
+  assert.equal(store.reports()[0].id, first.id);
+  assert.deepEqual(store.reports()[0].images, [
+    "https://example.com/fresh.jpg",
+  ]);
+  store.db.close();
+});

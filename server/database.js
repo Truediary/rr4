@@ -6,9 +6,23 @@ export function openDatabase(path) {
     CREATE TABLE IF NOT EXISTS reports(id TEXT PRIMARY KEY, fingerprint TEXT UNIQUE NOT NULL, payload TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS sources(id TEXT PRIMARY KEY, name TEXT NOT NULL, url TEXT NOT NULL UNIQUE, type TEXT NOT NULL, checked_at TEXT, status TEXT);
     CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY, value TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS media(id TEXT PRIMARY KEY, payload TEXT NOT NULL);
   `);
   return {
     db,
+    media() {
+      return db
+        .prepare("SELECT payload FROM media")
+        .all()
+        .map((row) => JSON.parse(row.payload))
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    },
+    addMedia(asset) {
+      db.prepare("INSERT INTO media VALUES(?,?)").run(
+        asset.id,
+        JSON.stringify(asset),
+      );
+    },
     getSetting(key) {
       return db.prepare("SELECT value FROM settings WHERE key=?").get(key)
         ?.value;
@@ -52,6 +66,22 @@ export function openDatabase(path) {
       const result = db
         .prepare("INSERT OR IGNORE INTO reports VALUES(?,?,?)")
         .run(payload.id, fingerprint, JSON.stringify(payload));
+      if (!result.changes && sourceId && normalized.images?.length) {
+        const existing = db
+          .prepare("SELECT id,payload FROM reports WHERE fingerprint=?")
+          .get(fingerprint);
+        if (existing) {
+          const previous = JSON.parse(existing.payload);
+          if (
+            JSON.stringify(previous.images) !==
+            JSON.stringify(normalized.images)
+          )
+            db.prepare("UPDATE reports SET payload=? WHERE id=?").run(
+              JSON.stringify({ ...previous, images: normalized.images }),
+              existing.id,
+            );
+        }
+      }
       return result.changes ? payload : null;
     },
     sources() {

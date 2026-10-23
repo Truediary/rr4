@@ -17,7 +17,12 @@ export default defineConfig({
   },
   webServer: {
     command: `node server/index.js`,
-    env: { DATA_DIR: testData, PORT: "3101", VK_ACCESS_TOKEN: "" },
+    env: {
+      DATA_DIR: testData,
+      PORT: "3101",
+      VK_ACCESS_TOKEN: "",
+      ALLOW_DEMO_DATA: "1",
+    },
     url: "http://127.0.0.1:3101/api/health",
     reuseExistingServer: false,
   },
