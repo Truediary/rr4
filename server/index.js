@@ -75,7 +75,7 @@ app.post("/api/media", imageUpload, async (req, res) =>
 app.get("/api/maps", (_req, res) =>
   res.json(JSON.parse(store.getSetting("waterMaps") || "{}")),
 );
-const mapSchema = z
+const mapImageSchema = z
   .object({
     url: z
       .string()
@@ -85,11 +85,6 @@ const mapSchema = z
           return true;
         return isImageReference(value);
       }),
-    minX: z.number().finite(),
-    maxX: z.number().finite(),
-    minY: z.number().finite(),
-    maxY: z.number().finite(),
-    flipY: z.boolean(),
     sourceUrl: z
       .url()
       .max(2000)
@@ -103,11 +98,21 @@ const mapSchema = z
       }, "Нужна HTTPS-ссылка на первоисточник без логина и пароля")
       .nullable()
       .default(null),
-  })
-  .refine(
+  });
+const mapSchema = z.union([
+  mapImageSchema.extend({ calibrated: z.literal(false) }),
+  mapImageSchema.extend({
+    calibrated: z.literal(true).default(true),
+    minX: z.number().finite(),
+    maxX: z.number().finite(),
+    minY: z.number().finite(),
+    maxY: z.number().finite(),
+    flipY: z.boolean(),
+  }).refine(
     (v) => v.maxX > v.minX && v.maxY > v.minY,
     "Максимальные координаты должны быть больше минимальных",
-  );
+  ),
+]);
 app.put("/api/maps/:waterId", (req, res) => {
   if (!waters.some((w) => w.id === req.params.waterId))
     return res.status(404).json({ error: "Водоём не найден" });

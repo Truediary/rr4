@@ -875,6 +875,9 @@
 .real-water-map.ready {
   opacity: 1;
 }
+.real-water-map.reference-only {
+  object-fit: contain;
+}
 .map-water-label {
   position: absolute;
   left: 40px;

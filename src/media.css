@@ -41,6 +41,9 @@
 .map-source-field {
   margin-top: 14px;
 }
+.map-coordinate-settings {
+  margin-top: 18px;
+}
 .image-upload-control .file-picker {
   position: absolute;
   width: 1px;

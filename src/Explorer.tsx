@@ -40,6 +40,8 @@ import {
 import type { FishingReport, Filters, Group } from "../shared/statistics.js";
 import "./explorer.css";
 import { GameImage, ImageUpload, MapReference, useMedia } from "./Media";
+import { isCalibratedMap } from "../shared/maps.js";
+import type { MapConfig } from "../shared/maps.js";
 
 type Water = {
   id: string;
@@ -47,15 +49,6 @@ type Water = {
   level: number;
   kind: string;
   accent: string;
-};
-type MapConfig = {
-  url: string;
-  minX: number;
-  maxX: number;
-  minY: number;
-  maxY: number;
-  flipY: boolean;
-  sourceUrl?: string | null;
 };
 type SavedSearch = { id: string; name: string; filters: Filters };
 const defaults: Filters = {
@@ -527,6 +520,54 @@ function Statistics({
   );
 }
 
+function CoordinateSettings({ map }: { map?: MapConfig }) {
+  const calibration = isCalibratedMap(map) ? map : undefined;
+  const [enabled, setEnabled] = useState(Boolean(calibration));
+  return (
+    <div className="map-coordinate-settings">
+      <label className="map-flip">
+        <input
+          type="checkbox"
+          name="calibrated"
+          checked={enabled}
+          onChange={(e) => setEnabled(e.target.checked)}
+        />
+        Наложить точки по игровым координатам
+      </label>
+      {enabled ? (
+        <>
+          <p>Укажите игровые координаты краёв изображения. Сетка A–J и 1–10 не задаёт эти значения.</p>
+          <div className="map-bounds">
+            {[
+              ["minX", "X слева"],
+              ["maxX", "X справа"],
+              ["minY", "Минимальная Y"],
+              ["maxY", "Максимальная Y"],
+            ].map(([name, label]) => (
+              <label key={name}>
+                {label}
+                <input
+                  name={name}
+                  type="number"
+                  step="any"
+                  required
+                  defaultValue={calibration?.[name as "minX" | "maxX" | "minY" | "maxY"] ?? ""}
+                />
+              </label>
+            ))}
+          </div>
+          <label className="map-flip">
+            <input type="checkbox" name="flipY" defaultChecked={calibration?.flipY ?? true} />
+            Y растёт снизу вверх
+          </label>
+        </>
+      ) : (
+        <p>Карта будет доступна для просмотра и увеличения. Отчёты можно открыть по списку координат под картой.</p>
+      )}
+    </div>
+  );
+}
+
 function WaterMap({
   water,
   reports,
@@ -548,6 +589,7 @@ function WaterMap({
     null,
   );
   const groups = groupReports(reports, "point");
+  const calibratedMap = isCalibratedMap(map) ? map : undefined;
   const summary = summarize(reports);
   const { assets } = useMedia();
   const source = map?.sourceUrl || assets.find((a) => a.url === map?.url)?.sourceUrl;
@@ -627,7 +669,7 @@ function WaterMap({
         >
           {map && (
             <img
-              className={`real-water-map ${ready ? "ready" : ""}`}
+              className={`real-water-map ${calibratedMap ? "" : "reference-only"} ${ready ? "ready" : ""}`}
               src={map.url}
               alt={`Карта: ${water.name}`}
               onLoad={() => {
@@ -652,18 +694,18 @@ function WaterMap({
                     : "Карта из игры не добавлена"}
               </strong>
               <span>
-                Загрузите скриншот карты и укажите координаты её краёв.
+                Загрузите изображение карты из игры.
               </span>
               <button onClick={onConfigure}>Подключить карту</button>
             </div>
           )}
-          {map &&
+          {calibratedMap &&
             ready &&
             groups.map((g) => {
-              const x = ((g.report.x - map.minX) / (map.maxX - map.minX)) * 100;
+              const x = ((g.report.x - calibratedMap.minX) / (calibratedMap.maxX - calibratedMap.minX)) * 100;
               const normalizedY =
-                ((g.report.y - map.minY) / (map.maxY - map.minY)) * 100;
-              const y = map.flipY ? 100 - normalizedY : normalizedY;
+                ((g.report.y - calibratedMap.minY) / (calibratedMap.maxY - calibratedMap.minY)) * 100;
+              const y = calibratedMap.flipY ? 100 - normalizedY : normalizedY;
               if (x < 0 || x > 100 || y < 0 || y > 100) return null;
               return (
                 <button
@@ -711,7 +753,7 @@ function WaterMap({
         </span>
         {map && ready && (
           <span className="map-caption">
-            Метки по настроенной сетке{" "}
+            {calibratedMap ? "Метки по настроенной сетке" : "Координатная привязка не задана"}{" "}
             {source && (
               <a href={source} target="_blank" rel="noreferrer">
                 Источник
@@ -723,7 +765,7 @@ function WaterMap({
           <span className="no-map-data">Нет отчётов за выбранный период</span>
         )}
       </div>
-      {!(map && ready) && groups.length > 0 && (
+      {!(calibratedMap && ready) && groups.length > 0 && (
         <div className="unmapped-points">
           {groups.map((g) => (
             <button
@@ -1089,23 +1131,27 @@ export default function Explorer({
       onNotify("Дождитесь загрузки карты");
       return;
     }
+    const calibrated = form.get("calibrated") === "on";
     setSavingMap(true);
     try {
       const config = await mapRequest("/" + mapEditor.id, {
         method: "PUT",
         body: JSON.stringify({
           url: form.get("url"),
-          minX: Number(form.get("minX")),
-          maxX: Number(form.get("maxX")),
-          minY: Number(form.get("minY")),
-          maxY: Number(form.get("maxY")),
-          flipY: form.get("flipY") === "on",
+          calibrated,
+          ...(calibrated ? {
+            minX: Number(form.get("minX")),
+            maxX: Number(form.get("maxX")),
+            minY: Number(form.get("minY")),
+            maxY: Number(form.get("maxY")),
+            flipY: form.get("flipY") === "on",
+          } : {}),
           sourceUrl: String(form.get("sourceUrl") || "").trim() || null,
         }),
       });
       setMaps((old) => ({ ...old, [mapEditor.id]: config }));
       setMapEditor(null);
-      onNotify("Карта и координатная сетка сохранены.");
+      onNotify(calibrated ? "Карта и координатная сетка сохранены." : "Карта сохранена для просмотра.");
     } catch (e) {
       onNotify((e as Error).message);
     } finally {
@@ -1580,8 +1626,8 @@ export default function Explorer({
             <form onSubmit={saveMap} className="map-editor-form">
               <h3>{mapEditor.name}</h3>
               <p>
-                Подключите изображение, которое разрешено использовать, и
-                укажите координаты его краёв. Настройка общая для всех
+                Подключите изображение, которое разрешено использовать.
+                Координатную привязку можно настроить позже. Настройка общая для всех
                 посетителей этого экземпляра сайта.
               </p>
               <MapReference />
@@ -1605,40 +1651,9 @@ export default function Explorer({
                   defaultValue={maps[mapEditor.id]?.sourceUrl || ""}
                 />
               </label>
-              <div className="map-bounds">
-                {[
-                  ["minX", "X слева", 0],
-                  ["maxX", "X справа", 300],
-                  ["minY", "Минимальная Y", 0],
-                  ["maxY", "Максимальная Y", 300],
-                ].map(([name, label, fallback]) => (
-                  <label key={name}>
-                    {label}
-                    <input
-                      name={String(name)}
-                      type="number"
-                      step="any"
-                      required
-                      defaultValue={
-                        maps[mapEditor.id]?.[
-                          name as "minX" | "maxX" | "minY" | "maxY"
-                        ] ?? fallback
-                      }
-                    />
-                  </label>
-                ))}
-              </div>
-              <label className="map-flip">
-                <input
-                  type="checkbox"
-                  name="flipY"
-                  defaultChecked={maps[mapEditor.id]?.flipY ?? true}
-                />
-                Y растёт снизу вверх
-              </label>
+              <CoordinateSettings map={maps[mapEditor.id]} />
               <p className="map-editor-note">
-                Загрузите настоящий скриншот карты из игры. Без изображения
-                метки на вымышленной местности не показываются.
+                Метки появятся на карте после настройки координатной привязки.
               </p>
               <div className="map-editor-actions">
                 <button

@@ -165,6 +165,10 @@ test("configured map is stored, renders and rejects invalid calibration", async 
   await dialog
     .getByLabel("Адрес изображения")
     .fill("https://example.com/map.svg");
+  await dialog.getByLabel("Наложить точки по игровым координатам").check();
+  for (const [label, value] of [["X слева", "0"], ["X справа", "300"], ["Минимальная Y", "0"], ["Максимальная Y", "300"]]) {
+    await dialog.getByLabel(label, { exact: true }).fill(value);
+  }
   await dialog
     .getByRole("button", { name: "Сохранить карту", exact: true })
     .click();
@@ -174,6 +178,8 @@ test("configured map is stored, renders and rejects invalid calibration", async 
   ).toHaveText("Карта пользователя");
   const maps = await (await request.get("/api/maps")).json();
   expect(maps.copper.url).toBe("https://example.com/map.svg");
+  expect(maps.copper.calibrated).toBe(true);
+  await expect(page.locator('[data-water="copper"] .cluster-marker').first()).toBeVisible();
   await request.delete("/api/maps/copper", { data: {} });
 });
 test("source limitations remain visible and unsafe API requests are rejected", async ({
