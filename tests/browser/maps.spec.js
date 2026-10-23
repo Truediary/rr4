@@ -22,7 +22,7 @@ test("reference maps keep reports accessible and require real bounds before plac
   const card = page.locator('[data-water="amber"]');
   await expect(card.locator(".real-water-map")).toHaveJSProperty("naturalWidth", 1);
   await expect(card.locator(".real-water-map")).toHaveCSS("object-fit", "contain");
-  await expect(card.locator(".map-caption")).toHaveText("Координатная привязка не задана");
+  await expect(card.locator(".map-caption")).toContainText("Координатная привязка не задана");
   await expect(card.locator(".cluster-marker")).toHaveCount(0);
   await expect(card.locator(".unmapped-points button")).toHaveCount(1);
   await card.locator(".unmapped-points button").click();

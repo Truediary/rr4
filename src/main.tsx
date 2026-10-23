@@ -44,7 +44,7 @@ import type { FishingReport as Report } from "../shared/statistics.js";
 type Water = {
   id: string;
   name: string;
-  level: number;
+  level: number | null;
   kind: string;
   accent: string;
 };

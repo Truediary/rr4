@@ -83,6 +83,12 @@ export const waters = [
     kind: "Река",
     accent: "#749e9a",
   },
+  // The supplied map images confirm the names; access levels are unverified.
+  { id: "ladoga", name: "Ладожское озеро", level: null, kind: "Озеро", accent: "#7b9eae" },
+  { id: "ladoga-archipelago", name: "Ладожский архипелаг", level: null, kind: "Архипелаг", accent: "#688d83" },
+  { id: "seversky-donets", name: "Река Северский Донец", level: null, kind: "Река", accent: "#929c73" },
+  { id: "sura", name: "Река Сура", level: null, kind: "Река", accent: "#88a981" },
+  { id: "yama", name: "Река Яма", level: null, kind: "Река", accent: "#9caeba" },
 ];
 export const fish = [
   "Карасекарп",

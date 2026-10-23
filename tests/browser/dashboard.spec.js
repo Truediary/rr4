@@ -8,7 +8,7 @@ test("reference statistics, water maps, point modal and favorites work", async (
   await expect(
     page.getByRole("heading", { name: "Точки клёва и статистика" }),
   ).toBeVisible();
-  await expect(page.locator(".water-stat-card")).toHaveCount(12);
+  await expect(page.locator(".water-stat-card")).toHaveCount(17);
   await page
     .getByRole("combobox", { name: "Водоём", exact: true })
     .selectOption("old-burg");
@@ -218,7 +218,7 @@ test("mobile filters, map modal and water navigation fit the viewport", async ({
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/?demo=true");
-  await expect(page.locator(".water-stat-card")).toHaveCount(12);
+  await expect(page.locator(".water-stat-card")).toHaveCount(17);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -242,5 +242,5 @@ test("mobile filters, map modal and water navigation fit the viewport", async ({
   ).toBe(true);
   await page.getByRole("button", { name: "Закрыть отчёты" }).click();
   await page.getByRole("button", { name: "Водоёмы", exact: true }).click();
-  await expect(page.locator(".water-stat-card")).toHaveCount(12);
+  await expect(page.locator(".water-stat-card")).toHaveCount(17);
 });

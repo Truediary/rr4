@@ -20,6 +20,9 @@ export type MediaAsset = {
   createdAt: string;
   size: number;
   aliases?: string[];
+  origin?: string;
+  sourceLabel?: string;
+  waterId?: string;
 };
 const MediaContext = createContext<{
   assets: MediaAsset[];
@@ -336,7 +339,8 @@ export default function MediaLibrary({
         <div>
           <strong>Скриншоты из Русской рыбалки 4</strong>
           <p>
-            Загрузите свой улов, изображение рыбы или наживки, карту водоёма.
+            Карты из комплекта уже доступны в библиотеке. Можно добавить
+            свой улов, изображение рыбы или наживки, другую карту водоёма.
             Файлы сохраняются на сервере. Источник можно указать ссылкой на
             публикацию.
           </p>
@@ -447,7 +451,7 @@ export default function MediaLibrary({
                     <ExternalLink size={11} />
                   </a>
                 ) : (
-                  <small>Загружено пользователем</small>
+                  <small>{asset.sourceLabel || "Загружено пользователем"}</small>
                 )}
               </div>
             </article>

@@ -46,7 +46,7 @@ import type { MapConfig } from "../shared/maps.js";
 type Water = {
   id: string;
   name: string;
-  level: number;
+  level: number | null;
   kind: string;
   accent: string;
 };
@@ -592,7 +592,8 @@ function WaterMap({
   const calibratedMap = isCalibratedMap(map) ? map : undefined;
   const summary = summarize(reports);
   const { assets } = useMedia();
-  const source = map?.sourceUrl || assets.find((a) => a.url === map?.url)?.sourceUrl;
+  const mapAsset = assets.find((a) => a.url === map?.url);
+  const source = map?.sourceUrl || mapAsset?.sourceUrl;
 
   return (
     <article className="water-stat-card" data-water={water.id}>
@@ -632,7 +633,7 @@ function WaterMap({
       <div
         className={`reference-map ${zoom > 1 ? "zoomed" : ""}`}
         onPointerDown={(e) => {
-          if ((e.target as HTMLElement).closest("button") || zoom === 1) return;
+          if ((e.target as HTMLElement).closest("button, a") || zoom === 1) return;
           drag.current = {
             x: e.clientX,
             y: e.clientY,
@@ -681,6 +682,8 @@ function WaterMap({
                 setFailed(true);
               }}
               draggable={false}
+              loading="lazy"
+              decoding="async"
             />
           )}
           {!(map && ready) && (
@@ -749,7 +752,9 @@ function WaterMap({
           </div>
         )}
         <span className="map-status-badge">
-          {map && ready ? "Карта пользователя" : "Нет игровой карты"}
+          {!map ? "Нет игровой карты"
+            : !ready ? failed ? "Карта недоступна" : "Загрузка карты…"
+            : mapAsset?.origin === "user-provided-archive" ? "Карта из комплекта" : "Карта пользователя"}
         </span>
         {map && ready && (
           <span className="map-caption">
@@ -759,12 +764,13 @@ function WaterMap({
                 Источник
               </a>
             )}
+            {" "}<a href={map.url} target="_blank" rel="noreferrer" aria-label={`Открыть оригинал: ${water.name}`}>Оригинал</a>
           </span>
         )}
-        {!reports.length && map && ready && (
-          <span className="no-map-data">Нет отчётов за выбранный период</span>
-        )}
       </div>
+      {!reports.length && map && ready && (
+        <p className="no-map-data">Нет отчётов за выбранный период</p>
+      )}
       {!(calibratedMap && ready) && groups.length > 0 && (
         <div className="unmapped-points">
           {groups.map((g) => (
@@ -980,6 +986,10 @@ export default function Explorer({
   const [view, setView] = useState(initialView);
   const [point, setPoint] = useState<string | null>(null);
   const [mapEditor, setMapEditor] = useState<Water | null>(null);
+  const { assets } = useMedia();
+  const bundledMap = assets.find((asset) =>
+    asset.kind === "map" && asset.waterId === mapEditor?.id && asset.origin === "user-provided-archive",
+  );
   const [maps, setMaps] = useState<Record<string, MapConfig>>({});
   const [savingMap, setSavingMap] = useState(false);
   const [saved, setSaved] = useState<SavedSearch[]>(readSaved);
@@ -1000,7 +1010,8 @@ export default function Explorer({
     .sort((a, b) =>
       sort === "water"
         ? a.water.name.localeCompare(b.water.name, "ru")
-        : summarize(b.reports).catches - summarize(a.reports).catches,
+        : summarize(b.reports).catches - summarize(a.reports).catches ||
+          Number(Boolean(maps[b.water.id])) - Number(Boolean(maps[a.water.id])),
     );
   const modalWater = point?.startsWith("water:")
     ? point.slice(6)
@@ -1687,6 +1698,21 @@ export default function Explorer({
                   >
                     Отключить карту
                   </button>
+                )}
+                {bundledMap && (
+                  <button type="button" disabled={savingMap} onClick={async () => {
+                    setSavingMap(true);
+                    try {
+                      const config = await mapRequest(`/${mapEditor.id}/reset`, { method: "POST", body: "{}" });
+                      setMaps((old) => ({ ...old, [mapEditor.id]: config }));
+                      setMapEditor(null);
+                      onNotify("Карта из комплекта восстановлена.");
+                    } catch (e) {
+                      onNotify((e as Error).message);
+                    } finally {
+                      setSavingMap(false);
+                    }
+                  }}>Восстановить карту из комплекта</button>
                 )}
               </div>
             </form>

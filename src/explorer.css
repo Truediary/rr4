@@ -991,17 +991,14 @@
   pointer-events: none;
 }
 .no-map-data {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f0f0df85;
+  margin: 6px 0 0;
   font-size: 10px;
   color: #74825c;
-  padding: 30px;
-  text-align: center;
-  pointer-events: none;
+}
+.map-caption a {
+  display: inline-block;
+  padding: 2px;
+  pointer-events: auto;
 }
 .reference-filter-panel {
   background: #f4f4f2;
@@ -1751,10 +1748,11 @@
 }
 .map-editor-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 15px;
   align-items: center;
 }
-.map-editor-actions > button:last-child:not(:first-child) {
+.map-editor-actions > button:not(.green-outline) {
   font-size: 10px;
   color: #99a68b;
   text-decoration: underline;
@@ -2298,7 +2296,7 @@
     font-size: 12px;
   }
   .water-map-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 15px 9px;
   }
   .water-name {
@@ -2340,7 +2338,8 @@
     margin-left: 0;
   }
   .reference-map {
-    height: 240px;
+    height: auto;
+    aspect-ratio: 1;
   }
   .reference-map-tools {
     top: 6px;
@@ -2390,7 +2389,6 @@
   }
   .no-map-data {
     font-size: 9px;
-    padding: 20px;
   }
   .reference-layout .main-footer > span:last-child {
     font-size: 6px;
@@ -2551,7 +2549,7 @@
     grid-template-columns: 1fr;
   }
   .reference-map {
-    height: 340px;
+    height: auto;
   }
   .water-name {
     font-size: 15px;

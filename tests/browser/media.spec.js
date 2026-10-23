@@ -121,7 +121,7 @@ test("map uploads, library selection and source attribution persist", async ({
     page.locator('[data-water="copper"] .map-status-badge'),
   ).toHaveText("Карта пользователя");
   await page.reload();
-  await expect(page.locator('[data-water="copper"] .map-caption a'))
+  await expect(page.locator('[data-water="copper"]').getByRole("link", { name: "Источник", exact: true }))
     .toHaveAttribute("href", "https://rf4map.ru/");
   const saved = await (await request.get("/api/maps")).json();
   expect(saved.copper.sourceUrl).toBe("https://rf4map.ru/");

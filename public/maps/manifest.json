@@ -1,0 +1,169 @@
+{
+  "version": 1,
+  "origin": "user-provided-archive",
+  "archiveName": "рр4 карт.rar",
+  "archiveSha256": "42cb0c74a63096f944c1c36f478821d0cf7341a01ede29f37c496fc2befc1ba1",
+  "receivedAt": "2026-10-23T15:28:41Z",
+  "files": [
+    {
+      "archivePath": "рр4 карт/800px-Akhtuba_River_Map.png",
+      "size": 1200989,
+      "width": 800,
+      "height": 800,
+      "sha256": "c7f50b0eda629963d1c3421875019f7333379704362614b73b4d18f61d4df2f4",
+      "waterId": "akhtuba",
+      "waterName": "Река Ахтуба",
+      "fileName": "akhtuba.png"
+    },
+    {
+      "archivePath": "рр4 карт/800px-Bear_Lake_Map.png",
+      "size": 989614,
+      "width": 800,
+      "height": 800,
+      "sha256": "d80053ce016383c6d33e3f445a7a56802c92cf02f4fc28b7e9f3411b41980f8a",
+      "waterId": "bear",
+      "waterName": "Озеро Медвежье",
+      "fileName": "bear.png"
+    },
+    {
+      "archivePath": "рр4 карт/800px-Belaya_River_Map.png",
+      "size": 1106976,
+      "width": 800,
+      "height": 800,
+      "sha256": "9625b18b0a034bc75ece22a46f8c980f5b2632ce185b21ab4cd905155dcbca33",
+      "waterId": "belaya",
+      "waterName": "Река Белая",
+      "fileName": "belaya.png"
+    },
+    {
+      "archivePath": "рр4 карт/800px-Kouri_Lake_Map.png",
+      "size": 1344349,
+      "width": 800,
+      "height": 800,
+      "sha256": "e7213c9c92330f0be9407d807435863974e4b88ff3dbf88b99cf98dafeaa6ee7",
+      "waterId": "kuori",
+      "waterName": "Озеро Куори",
+      "fileName": "kuori.png"
+    },
+    {
+      "archivePath": "рр4 карт/800px-Ladoga_Archipelago_Map.png",
+      "size": 972774,
+      "width": 800,
+      "height": 800,
+      "sha256": "2fdf372d724c96908d9d61ef51f27496626d62a21dad62f1ee148e0305379ca6",
+      "waterId": "ladoga-archipelago",
+      "waterName": "Ладожский архипелаг",
+      "fileName": "ladoga-archipelago.png"
+    },
+    {
+      "archivePath": "рр4 карт/800px-Ladoga_Lake_Map.png",
+      "size": 1114757,
+      "width": 800,
+      "height": 800,
+      "sha256": "ea08885cbed5a541981123899f9bc1fb4e3c8bfd46197a54a46ed5122508adf2",
+      "waterId": "ladoga",
+      "waterName": "Ладожское озеро",
+      "fileName": "ladoga.png"
+    },
+    {
+      "archivePath": "рр4 карт/800px-Lower_Tunguska_River_Map.png",
+      "size": 1414324,
+      "width": 800,
+      "height": 800,
+      "sha256": "c6128c924df80bf52c5398bdb83a7ece170f54e6277a5b2881387834708a0488",
+      "waterId": "tunguska",
+      "waterName": "Река Нижняя Тунгуска",
+      "fileName": "tunguska.png"
+    },
+    {
+      "archivePath": "рр4 карт/800px-Mosquito_Lake_Map.png",
+      "size": 1345525,
+      "width": 800,
+      "height": 800,
+      "sha256": "e55eb46b08120d0e9e0da8a350ae1f8b6a369b705cf1f86cd751e265ef4f93fc",
+      "waterId": "mosquito",
+      "waterName": "Озеро Комариное",
+      "fileName": "mosquito.png"
+    },
+    {
+      "archivePath": "рр4 карт/800px-Norwegian_Sea_Map.png",
+      "size": 1115840,
+      "width": 800,
+      "height": 800,
+      "sha256": "c58d933b6a0c95862e7b79aa876a8831ed892fc4d0864388eafecd20dd62928b",
+      "waterId": "norwegian-sea",
+      "waterName": "Норвежское море",
+      "fileName": "norwegian-sea.png"
+    },
+    {
+      "archivePath": "рр4 карт/800px-Old_Burg_Lake_Map.png",
+      "size": 983860,
+      "width": 800,
+      "height": 800,
+      "sha256": "4098ef6ef630bb53d68194f7c5f6c9d3789f4c9f3fc140b3d27e97622d1216dd",
+      "waterId": "old-burg",
+      "waterName": "Озеро Старый Острог",
+      "fileName": "old-burg.png"
+    },
+    {
+      "archivePath": "рр4 карт/800px-Seversky_Donets_River_Map.png",
+      "size": 1122009,
+      "width": 800,
+      "height": 800,
+      "sha256": "a19eab62b9f1e1727e0d406e8d1e05b6d2fd684d0f24c7468f049cd605d74718",
+      "waterId": "seversky-donets",
+      "waterName": "Река Северский Донец",
+      "fileName": "seversky-donets.png"
+    },
+    {
+      "archivePath": "рр4 карт/800px-Sura_River_Map.png",
+      "size": 1127894,
+      "width": 800,
+      "height": 800,
+      "sha256": "4d14ee319a94e3938ef82e48fe65708f035b49b996a65a887a8c8b39a7f5ce65",
+      "waterId": "sura",
+      "waterName": "Река Сура",
+      "fileName": "sura.png"
+    },
+    {
+      "archivePath": "рр4 карт/800px-The_Amber_Lake_Map.png",
+      "size": 1174441,
+      "width": 800,
+      "height": 800,
+      "sha256": "0905fb5aa01359f2373ec37f9f67cd643df18061ea35c2da735a3ff516f5d890",
+      "waterId": "amber",
+      "waterName": "Озеро Янтарное",
+      "fileName": "amber.png"
+    },
+    {
+      "archivePath": "рр4 карт/800px-Volkhov_River_Map.png",
+      "size": 1109874,
+      "width": 800,
+      "height": 800,
+      "sha256": "ca0c6cc4936f971461dedd31fbed6614e67e9caa4e4cbdfce69b7f781dc3cd3d",
+      "waterId": "volkhov",
+      "waterName": "Река Волхов",
+      "fileName": "volkhov.png"
+    },
+    {
+      "archivePath": "рр4 карт/800px-Winding_Rivulet_Map.png",
+      "size": 1330697,
+      "width": 800,
+      "height": 800,
+      "sha256": "14c242e1dea2fb9f9487f4daad66f9f6744daa8273fb8933c5d78f83034de671",
+      "waterId": "winding",
+      "waterName": "Река Вьюнок",
+      "fileName": "winding.png"
+    },
+    {
+      "archivePath": "рр4 карт/800px-Yama_River_Map.png",
+      "size": 1420983,
+      "width": 800,
+      "height": 800,
+      "sha256": "7e16ff81c7523dc036db4e9f3fe7592d6a6afba194abbbe29bf4f1e16c9a4952",
+      "waterId": "yama",
+      "waterName": "Река Яма",
+      "fileName": "yama.png"
+    }
+  ]
+}

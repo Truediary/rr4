@@ -15,6 +15,7 @@ import { importVk, vkDomain } from "./vk.js";
 import { imageUpload, saveImage } from "./media.js";
 import { isImageReference } from "../shared/media.js";
 import { bundledMedia } from './bundled-media.js';
+import { bundledMapMedia, bundledMaps, resolveMaps } from "./bundled-maps.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dataDir = process.env.DATA_DIR ?? resolve(root, "data");
@@ -64,7 +65,9 @@ app.get("/api/health", (_req, res) =>
   res.json({ status: "ok", database: "sqlite" }),
 );
 app.get("/api/catalog", (_req, res) => res.json({ waters, fish }));
-app.get("/api/media", (_req, res) => res.json([...store.media(),...bundledMedia]));
+app.get("/api/media", (_req, res) =>
+  res.json([...store.media(), ...bundledMedia, ...bundledMapMedia]),
+);
 app.post("/api/media", imageUpload, async (req, res) =>
   res
     .status(201)
@@ -73,7 +76,7 @@ app.post("/api/media", imageUpload, async (req, res) =>
     ),
 );
 app.get("/api/maps", (_req, res) =>
-  res.json(JSON.parse(store.getSetting("waterMaps") || "{}")),
+  res.json(resolveMaps(JSON.parse(store.getSetting("waterMaps") || "{}"))),
 );
 const mapImageSchema = z
   .object({
@@ -123,10 +126,22 @@ app.put("/api/maps/:waterId", (req, res) => {
   res.json(config);
 });
 app.delete("/api/maps/:waterId", (req, res) => {
+  if (!waters.some((w) => w.id === req.params.waterId))
+    return res.status(404).json({ error: "Водоём не найден" });
+  const maps = JSON.parse(store.getSetting("waterMaps") || "{}");
+  // A saved null also hides a bundled default after restarting the server.
+  maps[req.params.waterId] = null;
+  store.setSetting("waterMaps", JSON.stringify(maps));
+  res.json({ ok: true });
+});
+app.post("/api/maps/:waterId/reset", (req, res) => {
+  if (!Object.hasOwn(bundledMaps, req.params.waterId))
+    return res.status(404).json({ error: "Для этого водоёма нет карты в комплекте" });
+  const config = bundledMaps[req.params.waterId];
   const maps = JSON.parse(store.getSetting("waterMaps") || "{}");
   delete maps[req.params.waterId];
   store.setSetting("waterMaps", JSON.stringify(maps));
-  res.json({ ok: true });
+  res.json(config);
 });
 app.get("/api/reports", (req, res) => {
   if (req.query.demo === "true") {
