@@ -39,7 +39,7 @@ import {
 } from "../shared/statistics.js";
 import type { FishingReport, Filters, Group } from "../shared/statistics.js";
 import "./explorer.css";
-import { GameImage, ImageUpload, useMedia } from "./Media";
+import { GameImage, ImageUpload, MapReference, useMedia } from "./Media";
 
 type Water = {
   id: string;
@@ -55,6 +55,7 @@ type MapConfig = {
   minY: number;
   maxY: number;
   flipY: boolean;
+  sourceUrl?: string | null;
 };
 type SavedSearch = { id: string; name: string; filters: Filters };
 const defaults: Filters = {
@@ -549,7 +550,7 @@ function WaterMap({
   const groups = groupReports(reports, "point");
   const summary = summarize(reports);
   const { assets } = useMedia();
-  const source = assets.find((a) => a.url === map?.url)?.sourceUrl;
+  const source = map?.sourceUrl || assets.find((a) => a.url === map?.url)?.sourceUrl;
 
   return (
     <article className="water-stat-card" data-water={water.id}>
@@ -1099,6 +1100,7 @@ export default function Explorer({
           minY: Number(form.get("minY")),
           maxY: Number(form.get("maxY")),
           flipY: form.get("flipY") === "on",
+          sourceUrl: String(form.get("sourceUrl") || "").trim() || null,
         }),
       });
       setMaps((old) => ({ ...old, [mapEditor.id]: config }));
@@ -1582,6 +1584,7 @@ export default function Explorer({
                 укажите координаты его краёв. Настройка общая для всех
                 посетителей этого экземпляра сайта.
               </p>
+              <MapReference />
               <div className="form-field">
                 <span>Карта из игры</span>
                 <ImageUpload
@@ -1592,6 +1595,16 @@ export default function Explorer({
                   defaultValue={maps[mapEditor.id]?.url || ""}
                 />
               </div>
+              <label className="map-source-field">
+                Страница источника карты
+                <input
+                  name="sourceUrl"
+                  type="url"
+                  maxLength={2000}
+                  placeholder="https://rf4map.ru/…"
+                  defaultValue={maps[mapEditor.id]?.sourceUrl || ""}
+                />
+              </label>
               <div className="map-bounds">
                 {[
                   ["minX", "X слева", 0],

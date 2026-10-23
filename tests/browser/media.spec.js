@@ -94,20 +94,25 @@ test("library labels attach actual uploaded images to fish entries", async ({
     page.locator(".distribution-fish .catalog-game-image"),
   ).toHaveCount(1);
 });
-test("map files can be uploaded without a third-party image host", async ({
+test("map uploads, library selection and source attribution persist", async ({
   page,
+  request,
 }) => {
   await page.goto("/");
   await page
     .getByRole("button", { name: "Настроить карту: Озеро Медное" })
     .click();
   const dialog = page.getByRole("dialog", { name: "Настройка карты" });
+  await expect(dialog.getByRole("link", { name: "Карты на RF4MAP" }))
+    .toHaveAttribute("href", "https://rf4map.ru/");
   await dialog
     .getByLabel("Файл карты")
     .setInputFiles({ name: "map.png", mimeType: "image/png", buffer: png });
   await expect(dialog.getByLabel("Адрес изображения")).toHaveValue(
     /^\/media\/[a-f0-9-]+\.png$/,
   );
+  const url = await dialog.getByLabel("Адрес изображения").inputValue();
+  await dialog.getByLabel("Страница источника карты").fill("https://rf4map.ru/");
   await dialog
     .getByRole("button", { name: "Сохранить карту", exact: true })
     .click();
@@ -115,6 +120,26 @@ test("map files can be uploaded without a third-party image host", async ({
   await expect(
     page.locator('[data-water="copper"] .map-status-badge'),
   ).toHaveText("Карта пользователя");
+  await page.reload();
+  await expect(page.locator('[data-water="copper"] .map-caption a'))
+    .toHaveAttribute("href", "https://rf4map.ru/");
+  const saved = await (await request.get("/api/maps")).json();
+  expect(saved.copper.sourceUrl).toBe("https://rf4map.ru/");
+  for (const sourceUrl of ["not a URL", "javascript:alert(1)", "https://user:secret@example.com/"]) {
+    const invalid = await request.put("/api/maps/copper", {
+      data: { ...saved.copper, sourceUrl },
+    });
+    expect(invalid.status()).toBe(400);
+  }
+  await page.getByRole("button", { name: "Настроить карту: Озеро Куори" }).click();
+  await dialog.getByLabel("Из библиотеки карт").selectOption(url);
+  await expect(dialog.getByLabel("Адрес изображения")).toHaveValue(url);
+  await dialog.getByRole("button", { name: "Сохранить карту", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.locator('[data-water="kuori"] .real-water-map'))
+    .toHaveJSProperty("naturalWidth", 1);
+  expect((await (await request.get("/api/maps")).json()).kuori.url).toBe(url);
+  await request.delete("/api/maps/kuori", { data: {} });
 });
 test("active file formats and oversize uploads are rejected", async ({
   request,

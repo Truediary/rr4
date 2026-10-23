@@ -28,6 +28,19 @@ const MediaContext = createContext<{
 export function useMedia() {
   return useContext(MediaContext);
 }
+export function MapReference() {
+  return (
+    <div className="map-reference">
+      <a href="https://rf4map.ru/" target="_blank" rel="noreferrer">
+        Карты на RF4MAP <ExternalLink size={12} />
+      </a>
+      <span>
+        Для изображения с этого сайта сохраните ссылку на страницу источника.
+        Карту можно загрузить файлом или указать прямой адрес изображения.
+      </span>
+    </div>
+  );
+}
 export function MediaProvider({ children }: { children: ReactNode }) {
   const [assets, setAssets] = useState<MediaAsset[]>([]);
   async function refresh() {
@@ -82,7 +95,8 @@ export function ImageUpload({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const input = useRef<HTMLInputElement>(null);
-  const { refresh } = useMedia();
+  const { assets, refresh } = useMedia();
+  const libraryMaps = assets.filter((asset) => asset.kind === "map");
   const urls = value
     .split("\n")
     .map((v) => v.trim())
@@ -115,6 +129,23 @@ export function ImageUpload({
   }
   return (
     <div className="image-upload-control">
+      {single && kind === "map" && libraryMaps.length > 0 && (
+        <label className="library-map-picker">
+          Из библиотеки карт
+          <select
+            value={libraryMaps.some((asset) => asset.url === value) ? value : ""}
+            disabled={busy}
+            onChange={(e) => setValue(e.target.value)}
+          >
+            <option value="">Выберите сохранённую карту</option>
+            {libraryMaps.map((asset) => (
+              <option key={asset.id} value={asset.url}>
+                {[asset.label, asset.entity].filter(Boolean).join(" · ")}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <div className="upload-buttons">
         <button
           type="button"
@@ -311,6 +342,7 @@ export default function MediaLibrary({
           </p>
         </div>
       </div>
+      <MapReference />
       <form className="media-library-form" onSubmit={submit}>
         <label>
           Тип материала

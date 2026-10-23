@@ -90,6 +90,19 @@ const mapSchema = z
     minY: z.number().finite(),
     maxY: z.number().finite(),
     flipY: z.boolean(),
+    sourceUrl: z
+      .url()
+      .max(2000)
+      .refine((value) => {
+        try {
+          const url = new URL(value);
+          return url.protocol === "https:" && !url.username && !url.password;
+        } catch {
+          return false;
+        }
+      }, "Нужна HTTPS-ссылка на первоисточник без логина и пароля")
+      .nullable()
+      .default(null),
   })
   .refine(
     (v) => v.maxX > v.minX && v.maxY > v.minY,

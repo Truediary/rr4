@@ -14,6 +14,8 @@ function proxyAllowedHosts() {
     "vk.ru",
     "www.vk.ru",
     "api.vk.com",
+    "rf4map.ru",
+    "www.rf4map.ru",
     ...(process.env.FEED_ALLOWED_HOSTS || "")
       .split(",")
       .map((host) => host.trim().toLowerCase())

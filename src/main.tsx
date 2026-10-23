@@ -606,6 +606,13 @@ function App() {
                     letter: "vk",
                     description: "Сообщество ВКонтакте",
                   },
+                  {
+                    name: "RF4MAP",
+                    url: "https://rf4map.ru/",
+                    type: "website",
+                    letter: "M",
+                    description: "Сайт с картами. Автоматический импорт пока не подключён",
+                  },
                 ].map((s) => (
                   <div className="recommended-card" key={s.url}>
                     <span
