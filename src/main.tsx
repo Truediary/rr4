@@ -40,6 +40,7 @@ import "./style.css";
 import Explorer from "./Explorer";
 import MediaLibrary, { ImageUpload, MediaProvider } from "./Media";
 import type { FishingReport as Report } from "../shared/statistics.js";
+import type { PointDraft } from "../shared/maps.js";
 
 type Water = {
   id: string;
@@ -112,6 +113,11 @@ function App() {
     null,
   );
   const [detail, setDetail] = useState<Report | null>(null);
+  const [reportPoint, setReportPoint] = useState<PointDraft | null>(null);
+  const openReport = (point?: PointDraft) => {
+    setReportPoint(point || null);
+    setModal("report");
+  };
   const [toast, setToast] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -523,7 +529,7 @@ function App() {
               loading={loading}
               favorites={favorites}
               onFavorite={toggleFavorite}
-              onAdd={() => setModal("report")}
+              onAdd={openReport}
               onNotify={notify}
             />
           )}
@@ -540,7 +546,7 @@ function App() {
               loading={loading}
               favorites={favorites}
               onFavorite={toggleFavorite}
-              onAdd={() => setModal("report")}
+              onAdd={openReport}
               onNotify={notify}
             />
           )}
@@ -554,7 +560,7 @@ function App() {
               loading={loading}
               favorites={favorites}
               onFavorite={toggleFavorite}
-              onAdd={() => setModal("report")}
+              onAdd={openReport}
               onNotify={notify}
             />
           )}
@@ -798,7 +804,8 @@ function App() {
                     Водоём
                     <select
                       name="waterId"
-                      defaultValue={water || "old-burg"}
+                      aria-label="Водоём"
+                      defaultValue={reportPoint?.waterId || water || "old-burg"}
                       required
                     >
                       {waters.map((w) => (
@@ -829,6 +836,7 @@ function App() {
                       Координата X
                       <input
                         name="x"
+                        defaultValue={reportPoint?.x}
                         type="number"
                         placeholder="47"
                         required
@@ -840,6 +848,7 @@ function App() {
                       Координата Y
                       <input
                         name="y"
+                        defaultValue={reportPoint?.y}
                         type="number"
                         placeholder="20"
                         required

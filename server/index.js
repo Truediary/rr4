@@ -111,6 +111,19 @@ const mapSchema = z.union([
     minY: z.number().finite(),
     maxY: z.number().finite(),
     flipY: z.boolean(),
+    coordinateSource: z.object({
+      kind: z.enum(["reference", "control-points", "manual"]),
+      label: z.string().trim().min(1).max(120),
+      url: z.url().max(2000).refine((value) => {
+        try { const url = new URL(value); return url.protocol === "https:" && !url.username && !url.password; }
+        catch { return false; }
+      }).optional(),
+      checkedAt: z.iso.datetime().optional(),
+      controlPoints: z.array(z.object({
+        u: z.number().min(0).max(1), v: z.number().min(0).max(1),
+        x: z.number().min(0).max(999), y: z.number().min(0).max(999),
+      })).length(2).optional(),
+    }).optional(),
   }).refine(
     (v) => v.maxX > v.minX && v.maxY > v.minY,
     "Максимальные координаты должны быть больше минимальных",

@@ -3,9 +3,10 @@ import { test, expect } from "@playwright/test";
 test("real bundled maps load on a fresh installation and appear in the library", async ({ page, request }) => {
   const maps = await (await request.get("/api/maps")).json();
   expect(Object.keys(maps)).toHaveLength(16);
-  for (const config of Object.values(maps)) {
-    expect(config.calibrated).toBe(false);
-    expect(config).not.toHaveProperty("minX");
+  expect(Object.values(maps).filter((config) => config.calibrated)).toHaveLength(15);
+  for (const [waterId, config] of Object.entries(maps)) {
+    if (waterId === "norwegian-sea") expect(config).not.toHaveProperty("minX");
+    else expect(config.coordinateSource.label).toBe("RF4MAP");
   }
   await page.goto("/?water=amber");
   const card = page.locator('[data-water="amber"]');
@@ -51,6 +52,6 @@ test("custom map calibration survives defaults and bundled maps can be disabled 
   await expect(page.locator('[data-water="mosquito"] .real-water-map')).toHaveJSProperty("naturalWidth", 800);
   await page.reload();
   const restored = (await (await request.get("/api/maps")).json()).mosquito;
-  expect(restored.calibrated).toBe(false);
-  expect(restored).not.toHaveProperty("minX");
+  expect(restored.calibrated).toBe(true);
+  expect(restored.minX).toBe(33);
 });

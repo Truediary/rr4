@@ -86,6 +86,7 @@ export function ImageUpload({
   defaultValue = "",
   required = false,
   label = single ? "Адрес изображения" : "Ссылки на скриншоты",
+  onChange,
 }: {
   name: string;
   kind?: MediaAsset["kind"];
@@ -93,8 +94,10 @@ export function ImageUpload({
   defaultValue?: string;
   required?: boolean;
   label?: string;
+  onChange?: (value: string) => void;
 }) {
   const [value, setValue] = useState(defaultValue);
+  useEffect(() => { onChange?.(value); }, [value, onChange]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const input = useRef<HTMLInputElement>(null);

@@ -1,12 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import {
   Fish,
   MapPin,
   Search,
   Plus,
-  Minus,
-  Crosshair,
   Settings2,
   X,
   BarChart3,
@@ -40,8 +38,9 @@ import {
 import type { FishingReport, Filters, Group } from "../shared/statistics.js";
 import "./explorer.css";
 import { GameImage, ImageUpload, MapReference, useMedia } from "./Media";
-import { isCalibratedMap } from "../shared/maps.js";
-import type { MapConfig } from "../shared/maps.js";
+import type { MapConfig, PointDraft } from "../shared/maps.js";
+import MapCanvas from "./MapCanvas";
+import MapCalibration from "./MapCalibration";
 
 type Water = {
   id: string;
@@ -520,271 +519,28 @@ function Statistics({
   );
 }
 
-function CoordinateSettings({ map }: { map?: MapConfig }) {
-  const calibration = isCalibratedMap(map) ? map : undefined;
-  const [enabled, setEnabled] = useState(Boolean(calibration));
-  return (
-    <div className="map-coordinate-settings">
-      <label className="map-flip">
-        <input
-          type="checkbox"
-          name="calibrated"
-          checked={enabled}
-          onChange={(e) => setEnabled(e.target.checked)}
-        />
-        Наложить точки по игровым координатам
-      </label>
-      {enabled ? (
-        <>
-          <p>Укажите игровые координаты краёв изображения. Сетка A–J и 1–10 не задаёт эти значения.</p>
-          <div className="map-bounds">
-            {[
-              ["minX", "X слева"],
-              ["maxX", "X справа"],
-              ["minY", "Минимальная Y"],
-              ["maxY", "Максимальная Y"],
-            ].map(([name, label]) => (
-              <label key={name}>
-                {label}
-                <input
-                  name={name}
-                  type="number"
-                  step="any"
-                  required
-                  defaultValue={calibration?.[name as "minX" | "maxX" | "minY" | "maxY"] ?? ""}
-                />
-              </label>
-            ))}
-          </div>
-          <label className="map-flip">
-            <input type="checkbox" name="flipY" defaultChecked={calibration?.flipY ?? true} />
-            Y растёт снизу вверх
-          </label>
-        </>
-      ) : (
-        <p>Карта будет доступна для просмотра и увеличения. Отчёты можно открыть по списку координат под картой.</p>
-      )}
-    </div>
-  );
-}
-
-function WaterMap({
-  water,
-  reports,
-  onPoint,
-  map,
-  onConfigure,
-}: {
+function WaterMap({ water, reports, onPoint, map, onConfigure, onAdd, onNotify }: {
   water: Water;
   reports: FishingReport[];
   onPoint: (key: string) => void;
   map?: MapConfig;
   onConfigure: () => void;
+  onAdd: (point: PointDraft) => void;
+  onNotify: (message: string) => void;
 }) {
-  const [zoom, setZoom] = useState(1);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [ready, setReady] = useState(false);
-  const [failed, setFailed] = useState(false);
-  const drag = useRef<{ x: number; y: number; ox: number; oy: number } | null>(
-    null,
-  );
   const groups = groupReports(reports, "point");
-  const calibratedMap = isCalibratedMap(map) ? map : undefined;
   const summary = summarize(reports);
-  const { assets } = useMedia();
-  const mapAsset = assets.find((a) => a.url === map?.url);
-  const source = map?.sourceUrl || mapAsset?.sourceUrl;
-
   return (
     <article className="water-stat-card" data-water={water.id}>
       <header>
-        <button
-          className="water-name"
-          onClick={() => onPoint("water:" + water.id)}
-        >
-          {water.name}
-        </button>
-        <button className="water-info-button" onClick={onConfigure}>
-          Карта
-        </button>
-        <span className="water-temperature">
-          <Thermometer size={12} />
-          {summary.temperature === null
-            ? "—"
-            : `${Math.round(summary.temperature)}°`}
-        </span>
-        <button
-          className="water-configure"
-          aria-label={`Настроить карту: ${water.name}`}
-          onClick={onConfigure}
-        >
-          <Settings2 size={13} />
-        </button>
+        <button className="water-name" onClick={() => onPoint("water:" + water.id)}>{water.name}</button>
+        <button className="water-info-button" onClick={onConfigure}>Карта</button>
+        <span className="water-temperature"><Thermometer size={12} />{summary.temperature === null ? "—" : `${Math.round(summary.temperature)}°`}</span>
+        <button className="water-configure" aria-label={`Настроить карту: ${water.name}`} onClick={onConfigure}><Settings2 size={13} /></button>
       </header>
-      <div className="water-badges">
-        <span>Наживки {groupReports(reports, "bait").length}</span>
-        <span>Видов рыб {groupReports(reports, "fish").length}</span>
-        <span>Точек {groups.length}</span>
-      </div>
-      <div className="water-summary">
-        Посты: <b>{summary.posts}</b> Улов: <b>{summary.catches}</b>
-        <button onClick={() => onPoint("water:" + water.id)}>Подробнее</button>
-      </div>
-      <div
-        className={`reference-map ${zoom > 1 ? "zoomed" : ""}`}
-        onPointerDown={(e) => {
-          if ((e.target as HTMLElement).closest("button, a") || zoom === 1) return;
-          drag.current = {
-            x: e.clientX,
-            y: e.clientY,
-            ox: offset.x,
-            oy: offset.y,
-          };
-          e.currentTarget.setPointerCapture(e.pointerId);
-        }}
-        onPointerMove={(e) => {
-          if (!drag.current) return;
-          setOffset({
-            x: Math.max(
-              -200,
-              Math.min(200, drag.current.ox + e.clientX - drag.current.x),
-            ),
-            y: Math.max(
-              -200,
-              Math.min(200, drag.current.oy + e.clientY - drag.current.y),
-            ),
-          });
-        }}
-        onPointerUp={() => {
-          drag.current = null;
-        }}
-        onPointerCancel={() => {
-          drag.current = null;
-        }}
-      >
-        <div
-          className="reference-map-content"
-          style={{
-            transform: `translate(${offset.x}px,${offset.y}px) scale(${zoom})`,
-          }}
-        >
-          {map && (
-            <img
-              className={`real-water-map ${calibratedMap ? "" : "reference-only"} ${ready ? "ready" : ""}`}
-              src={map.url}
-              alt={`Карта: ${water.name}`}
-              onLoad={() => {
-                setReady(true);
-                setFailed(false);
-              }}
-              onError={() => {
-                setReady(false);
-                setFailed(true);
-              }}
-              draggable={false}
-              loading="lazy"
-              decoding="async"
-            />
-          )}
-          {!(map && ready) && (
-            <div className="real-image-missing">
-              <MapPin size={27} />
-              <strong>
-                {map && !failed
-                  ? "Загрузка карты…"
-                  : map
-                    ? "Изображение карты недоступно"
-                    : "Карта из игры не добавлена"}
-              </strong>
-              <span>
-                Загрузите изображение карты из игры.
-              </span>
-              <button onClick={onConfigure}>Подключить карту</button>
-            </div>
-          )}
-          {calibratedMap &&
-            ready &&
-            groups.map((g) => {
-              const x = ((g.report.x - calibratedMap.minX) / (calibratedMap.maxX - calibratedMap.minX)) * 100;
-              const normalizedY =
-                ((g.report.y - calibratedMap.minY) / (calibratedMap.maxY - calibratedMap.minY)) * 100;
-              const y = calibratedMap.flipY ? 100 - normalizedY : normalizedY;
-              if (x < 0 || x > 100 || y < 0 || y > 100) return null;
-              return (
-                <button
-                  key={g.key}
-                  className={`cluster-marker ${g.posts >= 3 ? "red" : g.posts >= 2 ? "yellow" : "green"}`}
-                  style={{ left: `${x}%`, top: `${y}%` }}
-                  aria-label={`${water.name}, точка ${g.label}: ${g.posts} постов`}
-                  onClick={() => onPoint(g.key)}
-                >
-                  <span>{g.posts > 1 ? g.posts : ""}</span>
-                </button>
-              );
-            })}
-        </div>
-        {map && ready && (
-          <div className="reference-map-tools">
-            <button
-              aria-label={`Увеличить: ${water.name}`}
-              onClick={() => setZoom((v) => Math.min(3, v + 0.5))}
-            >
-              <Plus size={19} />
-            </button>
-            <button
-              aria-label={`Уменьшить: ${water.name}`}
-              onClick={() => {
-                setZoom((v) => Math.max(1, v - 0.5));
-                setOffset({ x: 0, y: 0 });
-              }}
-            >
-              <Minus size={17} />
-            </button>
-            <button
-              aria-label={`Сбросить карту: ${water.name}`}
-              onClick={() => {
-                setZoom(1);
-                setOffset({ x: 0, y: 0 });
-              }}
-            >
-              <Crosshair size={15} />
-            </button>
-          </div>
-        )}
-        <span className="map-status-badge">
-          {!map ? "Нет игровой карты"
-            : !ready ? failed ? "Карта недоступна" : "Загрузка карты…"
-            : mapAsset?.origin === "user-provided-archive" ? "Карта из комплекта" : "Карта пользователя"}
-        </span>
-        {map && ready && (
-          <span className="map-caption">
-            {calibratedMap ? "Метки по настроенной сетке" : "Координатная привязка не задана"}{" "}
-            {source && (
-              <a href={source} target="_blank" rel="noreferrer">
-                Источник
-              </a>
-            )}
-            {" "}<a href={map.url} target="_blank" rel="noreferrer" aria-label={`Открыть оригинал: ${water.name}`}>Оригинал</a>
-          </span>
-        )}
-      </div>
-      {!reports.length && map && ready && (
-        <p className="no-map-data">Нет отчётов за выбранный период</p>
-      )}
-      {!(calibratedMap && ready) && groups.length > 0 && (
-        <div className="unmapped-points">
-          {groups.map((g) => (
-            <button
-              key={g.key}
-              onClick={() => onPoint(g.key)}
-              aria-label={`Открыть точку ${g.label}: ${water.name}`}
-            >
-              {g.label}
-              <b>{g.posts} пост.</b>
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="water-badges"><span>Наживки {groupReports(reports, "bait").length}</span><span>Видов рыб {groupReports(reports, "fish").length}</span><span>Точек {groups.length}</span></div>
+      <div className="water-summary">Посты: <b>{summary.posts}</b> Улов: <b>{summary.catches}</b><button onClick={() => onPoint("water:" + water.id)}>Подробнее</button></div>
+      <MapCanvas key={map?.url || "empty"} water={water} map={map} groups={groups} onPoint={onPoint} onConfigure={onConfigure} onAdd={onAdd} onNotify={onNotify} />
     </article>
   );
 }
@@ -978,7 +734,7 @@ export default function Explorer({
   loading: boolean;
   favorites: string[];
   onFavorite: (id: string) => void;
-  onAdd: () => void;
+  onAdd: (point?: PointDraft) => void;
   onNotify: (message: string) => void;
 }) {
   const [filters, setFilters] = useState<Filters>(initialFilters);
@@ -986,6 +742,7 @@ export default function Explorer({
   const [view, setView] = useState(initialView);
   const [point, setPoint] = useState<string | null>(null);
   const [mapEditor, setMapEditor] = useState<Water | null>(null);
+  const [mapEditorImage, setMapEditorImage] = useState("");
   const { assets } = useMedia();
   const bundledMap = assets.find((asset) =>
     asset.kind === "map" && asset.waterId === mapEditor?.id && asset.origin === "user-provided-archive",
@@ -1142,6 +899,10 @@ export default function Explorer({
       onNotify("Дождитесь загрузки карты");
       return;
     }
+    if (form.get("_calibrationPending") === "1") {
+      onNotify("Сначала примените привязку по двум точкам или отмените её настройку");
+      return;
+    }
     const calibrated = form.get("calibrated") === "on";
     setSavingMap(true);
     try {
@@ -1156,6 +917,7 @@ export default function Explorer({
             minY: Number(form.get("minY")),
             maxY: Number(form.get("maxY")),
             flipY: form.get("flipY") === "on",
+            ...(form.get("coordinateSource") ? { coordinateSource: JSON.parse(String(form.get("coordinateSource"))) } : {}),
           } : {}),
           sourceUrl: String(form.get("sourceUrl") || "").trim() || null,
         }),
@@ -1176,7 +938,7 @@ export default function Explorer({
           <span>РУССКАЯ РЫБАЛКА 4 / НАВИГАТОР</span>
           <h1>{heading}</h1>
         </div>
-        <button className="reference-add" onClick={onAdd}>
+        <button className="reference-add" onClick={() => onAdd()}>
           <Plus size={14} />
           Добавить точку
         </button>
@@ -1294,7 +1056,9 @@ export default function Explorer({
                     reports={reports}
                     map={maps[water.id]}
                     onPoint={setPoint}
-                    onConfigure={() => setMapEditor(water)}
+                    onConfigure={() => { setMapEditorImage(maps[water.id]?.url || ""); setMapEditor(water); }}
+                    onAdd={onAdd}
+                    onNotify={onNotify}
                   />
                 ))}
               </div>
@@ -1650,6 +1414,7 @@ export default function Explorer({
                   single
                   required
                   defaultValue={maps[mapEditor.id]?.url || ""}
+                  onChange={setMapEditorImage}
                 />
               </div>
               <label className="map-source-field">
@@ -1662,7 +1427,7 @@ export default function Explorer({
                   defaultValue={maps[mapEditor.id]?.sourceUrl || ""}
                 />
               </label>
-              <CoordinateSettings map={maps[mapEditor.id]} />
+              <MapCalibration key={mapEditorImage} url={mapEditorImage} map={maps[mapEditor.id]?.url === mapEditorImage ? maps[mapEditor.id] : undefined} />
               <p className="map-editor-note">
                 Метки появятся на карте после настройки координатной привязки.
               </p>

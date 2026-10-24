@@ -1,0 +1,222 @@
+{
+  "version": 1,
+  "description": "Numeric bounds of the complete 800x800 map image, including its frame. Public RF4MAP reference values; not an official game API or a claim of in-game precision. User calibration overrides these defaults.",
+  "profiles": {
+    "yama": {
+      "imageSha256": "7e16ff81c7523dc036db4e9f3fe7592d6a6afba194abbbe29bf4f1e16c9a4952",
+      "minX": -8,
+      "maxX": 307,
+      "minY": -10,
+      "maxY": 312,
+      "flipY": true,
+      "coordinateSource": {
+        "kind": "reference",
+        "label": "RF4MAP",
+        "url": "https://rf4map.ru/location/1",
+        "checkedAt": "2026-10-24T12:18:33Z"
+      }
+    },
+    "ladoga": {
+      "imageSha256": "ea08885cbed5a541981123899f9bc1fb4e3c8bfd46197a54a46ed5122508adf2",
+      "minX": 9,
+      "maxX": 98,
+      "minY": 3,
+      "maxY": 93,
+      "flipY": true,
+      "coordinateSource": {
+        "kind": "reference",
+        "label": "RF4MAP",
+        "url": "https://rf4map.ru/location/18",
+        "checkedAt": "2026-10-24T12:18:33Z"
+      }
+    },
+    "volkhov": {
+      "imageSha256": "ca0c6cc4936f971461dedd31fbed6614e67e9caa4e4cbdfce69b7f781dc3cd3d",
+      "minX": -3,
+      "maxX": 202,
+      "minY": -3,
+      "maxY": 202,
+      "flipY": true,
+      "coordinateSource": {
+        "kind": "reference",
+        "label": "RF4MAP",
+        "url": "https://rf4map.ru/location/15",
+        "checkedAt": "2026-10-24T12:18:33Z"
+      }
+    },
+    "ladoga-archipelago": {
+      "imageSha256": "2fdf372d724c96908d9d61ef51f27496626d62a21dad62f1ee148e0305379ca6",
+      "minX": -21,
+      "maxX": 624,
+      "minY": -24,
+      "maxY": 627,
+      "flipY": true,
+      "coordinateSource": {
+        "kind": "reference",
+        "label": "RF4MAP",
+        "url": "https://rf4map.ru/location/14",
+        "checkedAt": "2026-10-24T12:18:33Z"
+      }
+    },
+    "old-burg": {
+      "imageSha256": "4098ef6ef630bb53d68194f7c5f6c9d3789f4c9f3fc140b3d27e97622d1216dd",
+      "minX": 0,
+      "maxX": 80,
+      "minY": 2,
+      "maxY": 80,
+      "flipY": true,
+      "coordinateSource": {
+        "kind": "reference",
+        "label": "RF4MAP",
+        "url": "https://rf4map.ru/location/13",
+        "checkedAt": "2026-10-24T12:18:33Z"
+      }
+    },
+    "mosquito": {
+      "imageSha256": "e55eb46b08120d0e9e0da8a350ae1f8b6a369b705cf1f86cd751e265ef4f93fc",
+      "minX": 33,
+      "maxX": 108,
+      "minY": 37,
+      "maxY": 112,
+      "flipY": true,
+      "coordinateSource": {
+        "kind": "reference",
+        "label": "RF4MAP",
+        "url": "https://rf4map.ru/location/16",
+        "checkedAt": "2026-10-24T12:18:33Z"
+      }
+    },
+    "kuori": {
+      "imageSha256": "e7213c9c92330f0be9407d807435863974e4b88ff3dbf88b99cf98dafeaa6ee7",
+      "minX": 57,
+      "maxX": 145,
+      "minY": 56,
+      "maxY": 145,
+      "flipY": true,
+      "coordinateSource": {
+        "kind": "reference",
+        "label": "RF4MAP",
+        "url": "https://rf4map.ru/location/11",
+        "checkedAt": "2026-10-24T12:18:33Z"
+      }
+    },
+    "tunguska": {
+      "imageSha256": "c6128c924df80bf52c5398bdb83a7ece170f54e6277a5b2881387834708a0488",
+      "minX": -8,
+      "maxX": 248,
+      "minY": -6,
+      "maxY": 244,
+      "flipY": true,
+      "coordinateSource": {
+        "kind": "reference",
+        "label": "RF4MAP",
+        "url": "https://rf4map.ru/location/12",
+        "checkedAt": "2026-10-24T12:18:33Z"
+      }
+    },
+    "bear": {
+      "imageSha256": "d80053ce016383c6d33e3f445a7a56802c92cf02f4fc28b7e9f3411b41980f8a",
+      "minX": 10,
+      "maxX": 90,
+      "minY": 7,
+      "maxY": 90,
+      "flipY": true,
+      "coordinateSource": {
+        "kind": "reference",
+        "label": "RF4MAP",
+        "url": "https://rf4map.ru/location/10",
+        "checkedAt": "2026-10-24T12:18:33Z"
+      }
+    },
+    "seversky-donets": {
+      "imageSha256": "a19eab62b9f1e1727e0d406e8d1e05b6d2fd684d0f24c7468f049cd605d74718",
+      "minX": 7,
+      "maxX": 195,
+      "minY": 7,
+      "maxY": 195,
+      "flipY": true,
+      "coordinateSource": {
+        "kind": "reference",
+        "label": "RF4MAP",
+        "url": "https://rf4map.ru/location/9",
+        "checkedAt": "2026-10-24T12:18:33Z"
+      }
+    },
+    "akhtuba": {
+      "imageSha256": "c7f50b0eda629963d1c3421875019f7333379704362614b73b4d18f61d4df2f4",
+      "minX": -4,
+      "maxX": 207,
+      "minY": -9,
+      "maxY": 207,
+      "flipY": true,
+      "coordinateSource": {
+        "kind": "reference",
+        "label": "RF4MAP",
+        "url": "https://rf4map.ru/location/6",
+        "checkedAt": "2026-10-24T12:18:33Z"
+      }
+    },
+    "amber": {
+      "imageSha256": "0905fb5aa01359f2373ec37f9f67cd643df18061ea35c2da735a3ff516f5d890",
+      "minX": 1,
+      "maxX": 192,
+      "minY": 19,
+      "maxY": 212,
+      "flipY": true,
+      "coordinateSource": {
+        "kind": "reference",
+        "label": "RF4MAP",
+        "url": "https://rf4map.ru/location/4",
+        "checkedAt": "2026-10-24T12:18:33Z"
+      }
+    },
+    "winding": {
+      "imageSha256": "14c242e1dea2fb9f9487f4daad66f9f6744daa8273fb8933c5d78f83034de671",
+      "minX": 48,
+      "maxX": 138,
+      "minY": 58,
+      "maxY": 146,
+      "flipY": true,
+      "coordinateSource": {
+        "kind": "reference",
+        "label": "RF4MAP",
+        "url": "https://rf4map.ru/location/3",
+        "checkedAt": "2026-10-24T12:18:33Z"
+      }
+    },
+    "sura": {
+      "imageSha256": "4d14ee319a94e3938ef82e48fe65708f035b49b996a65a887a8c8b39a7f5ce65",
+      "minX": -4,
+      "maxX": 162,
+      "minY": -4,
+      "maxY": 163,
+      "flipY": true,
+      "coordinateSource": {
+        "kind": "reference",
+        "label": "RF4MAP",
+        "url": "https://rf4map.ru/location/2",
+        "checkedAt": "2026-10-24T12:18:33Z"
+      }
+    },
+    "belaya": {
+      "imageSha256": "9625b18b0a034bc75ece22a46f8c980f5b2632ce185b21ab4cd905155dcbca33",
+      "minX": -1,
+      "maxX": 112,
+      "minY": -3,
+      "maxY": 101,
+      "flipY": true,
+      "coordinateSource": {
+        "kind": "reference",
+        "label": "RF4MAP",
+        "url": "https://rf4map.ru/location/5",
+        "checkedAt": "2026-10-24T12:18:33Z"
+      }
+    }
+  },
+  "unavailable": {
+    "norwegian-sea": {
+      "url": "https://rf4map.ru/location/17",
+      "reason": "The public source returned zero ranges on both axes; two known in-game control points are required."
+    }
+  }
+}

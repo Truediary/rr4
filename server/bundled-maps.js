@@ -1,7 +1,16 @@
 import { readFileSync } from "node:fs";
 
 const manifest = JSON.parse(
-  readFileSync(new URL("../public/maps/manifest.json", import.meta.url), "utf8"),
+  readFileSync(
+    new URL("../public/maps/manifest.json", import.meta.url),
+    "utf8",
+  ),
+);
+const calibration = JSON.parse(
+  readFileSync(
+    new URL("../public/maps/calibration.json", import.meta.url),
+    "utf8",
+  ),
 );
 
 export const bundledMapMedia = manifest.files.map((file) => ({
@@ -21,13 +30,15 @@ export const bundledMapMedia = manifest.files.map((file) => ({
   sha256: file.sha256,
 }));
 
-// The A–J / 1–10 grid does not establish the game's numeric coordinates.
 export const bundledMaps = Object.fromEntries(
-  bundledMapMedia.map((asset) => [asset.waterId, {
-    url: asset.url,
-    calibrated: false,
-    sourceUrl: null,
-  }]),
+  bundledMapMedia.map((asset) => {
+    const profile = calibration.profiles[asset.waterId];
+    const config = { url: asset.url, calibrated: false, sourceUrl: null };
+    if (!profile || profile.imageSha256 !== asset.sha256)
+      return [asset.waterId, config];
+    const { imageSha256: _hash, ...bounds } = profile;
+    return [asset.waterId, { ...config, ...bounds, calibrated: true }];
+  }),
 );
 
 export function resolveMaps(overrides = {}) {

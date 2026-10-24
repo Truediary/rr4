@@ -1,0 +1,22 @@
+{
+  "archive": "asdas.rar",
+  "archiveSha256": "c01c5af95abc348eccc63fd1bf5b10783f5dff9c2146eb3e3bcb6d6cccbba320",
+  "files": [
+    {
+      "archivePath": "asdas/RwCxNsi.png",
+      "size": 828679,
+      "width": 900,
+      "height": 893,
+      "sha256": "645557e0eb401f4ab37b1da1ea3a8b983f5040da75c9a863a1d292892ca18eb3",
+      "fileName": "old-burg-website.png"
+    },
+    {
+      "archivePath": "asdas/yHOyMv0.png",
+      "size": 1681614,
+      "width": 1292,
+      "height": 1047,
+      "sha256": "1a321eb88b90c3f1c2ed91e413515abed79ab18dac54c9332594e79f3652f233",
+      "fileName": "norwegian-in-game.png"
+    }
+  ]
+}
